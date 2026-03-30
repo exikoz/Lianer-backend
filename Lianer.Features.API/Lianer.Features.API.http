@@ -1,0 +1,6 @@
+@Lianer.Features.API_HostAddress = http://localhost:5266
+
+GET {{Lianer.Features.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
