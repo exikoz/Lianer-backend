@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Lianer.Core.API.Controllers;
 
 /// <summary>
-/// Controller för användarhantering (RESTful resource: users)
+/// Controller for user management (RESTful resource: users)
 /// </summary>
 [ApiController]
 [Route("api/v1/users")]
@@ -22,18 +22,18 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
-    /// Skapar ett nytt användarkonto (registrering)
+    /// Creates a new user account (registration)
     /// </summary>
-    /// <param name="request">Användardata (namn, e-post, lösenord)</param>
-    /// <returns>Skapad användare</returns>
-    /// <response code="201">Användare skapad framgångsrikt</response>
-    /// <response code="400">Ogiltig input eller e-post redan registrerad</response>
+    /// <param name="request">User data (name, email, password)</param>
+    /// <returns>Created user</returns>
+    /// <response code="201">User created successfully</response>
+    /// <response code="400">Invalid input or email already registered</response>
     [HttpPost]
     [ProducesResponseType(typeof(RegisterResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<RegisterResponseDto>> CreateUser([FromBody] RegisterRequestDto request)
     {
-        _logger.LogInformation("POST /api/v1/users anropad");
+        _logger.LogInformation("POST /api/v1/users called");
 
         var response = await _authService.RegisterAsync(request);
 
@@ -45,17 +45,17 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
-    /// Hämtar en specifik användare (placeholder för framtida implementation)
+    /// Gets a specific user (placeholder for future implementation)
     /// </summary>
-    /// <param name="id">Användar-ID</param>
-    /// <returns>Användare</returns>
+    /// <param name="id">User ID</param>
+    /// <returns>User</returns>
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(RegisterResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<RegisterResponseDto>> GetUser(Guid id)
     {
-        // TODO: Implementera i framtida ticket
-        _logger.LogInformation("GET /api/v1/users/{Id} anropad", id);
-        return NotFound(new { message = "Endpoint ej implementerad än" });
+        // TODO: Implement in future ticket
+        _logger.LogInformation("GET /api/v1/users/{Id} called", id);
+        return NotFound(new { message = "Endpoint not yet implemented" });
     }
 }

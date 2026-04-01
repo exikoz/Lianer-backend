@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Lianer.Core.API.Controllers;
 
 /// <summary>
-/// Controller för sessionshantering (login/logout)
+/// Controller for session management (login/logout)
 /// </summary>
 [ApiController]
 [Route("api/v1/sessions")]
@@ -18,30 +18,30 @@ public class SessionsController : ControllerBase
     }
 
     /// <summary>
-    /// Skapar en ny session (login) - Implementeras i K-101
+    /// Creates a new session (login) - To be implemented in K-101
     /// </summary>
-    /// <returns>JWT-token</returns>
+    /// <returns>JWT token</returns>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> CreateSession()
     {
-        // TODO: Implementera i K-101
-        _logger.LogInformation("POST /api/v1/sessions anropad (ej implementerad)");
-        return StatusCode(501, new { message = "Login-funktionalitet implementeras i K-101" });
+        // TODO: Implement in K-101
+        _logger.LogInformation("POST /api/v1/sessions called (not implemented)");
+        return StatusCode(501, new { message = "Login functionality will be implemented in K-101" });
     }
 
     /// <summary>
-    /// Tar bort en session (logout) - Framtida implementation
+    /// Deletes a session (logout) - Future implementation
     /// </summary>
-    /// <param name="id">Session-ID</param>
+    /// <param name="id">Session ID</param>
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteSession(Guid id)
     {
-        // TODO: Implementera i framtida ticket
-        _logger.LogInformation("DELETE /api/v1/sessions/{Id} anropad (ej implementerad)", id);
-        return StatusCode(501, new { message = "Logout-funktionalitet implementeras senare" });
+        // TODO: Implement in future ticket
+        _logger.LogInformation("DELETE /api/v1/sessions/{Id} called (not implemented)", id);
+        return StatusCode(501, new { message = "Logout functionality will be implemented later" });
     }
 }

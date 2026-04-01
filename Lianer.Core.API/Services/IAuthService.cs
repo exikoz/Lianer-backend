@@ -3,14 +3,14 @@ using Lianer.Core.API.DTOs.Auth;
 namespace Lianer.Core.API.Services;
 
 /// <summary>
-/// Interface för autentiseringstjänster
+/// Interface for authentication services
 /// </summary>
 public interface IAuthService
 {
     /// <summary>
-    /// Skapar en ny användare (POST /api/v1/users)
+    /// Creates a new user (POST /api/v1/users)
     /// </summary>
-    /// <param name="request">Användardata</param>
-    /// <returns>Skapad användare</returns>
+    /// <param name="request">User data</param>
+    /// <returns>Created user</returns>
     Task<RegisterResponseDto> RegisterAsync(RegisterRequestDto request);
 }

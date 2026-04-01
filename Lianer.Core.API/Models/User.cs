@@ -3,49 +3,49 @@ using System.ComponentModel.DataAnnotations;
 namespace Lianer.Core.API.Models;
 
 /// <summary>
-/// Användarentitet för databasen
+/// User entity for database
 /// </summary>
 public class User
 {
     /// <summary>
-    /// Användarens unika ID
+    /// User's unique ID
     /// </summary>
     [Key]
     public Guid Id { get; set; }
 
     /// <summary>
-    /// Användarens fullständiga namn
+    /// User's full name
     /// </summary>
     [Required]
     [MaxLength(100)]
     public string FullName { get; set; } = string.Empty;
 
     /// <summary>
-    /// Användarens e-postadress (unik)
+    /// User's email address (unique)
     /// </summary>
     [Required]
     [MaxLength(255)]
     public string Email { get; set; } = string.Empty;
 
     /// <summary>
-    /// Hashat lösenord (BCrypt)
+    /// Hashed password (BCrypt)
     /// </summary>
     [Required]
     [MaxLength(255)]
     public string PasswordHash { get; set; } = string.Empty;
 
     /// <summary>
-    /// Tidpunkt när kontot skapades
+    /// Timestamp when the account was created
     /// </summary>
     public DateTime CreatedAt { get; set; }
 
     /// <summary>
-    /// Tidpunkt när kontot senast uppdaterades
+    /// Timestamp when the account was last updated
     /// </summary>
     public DateTime? UpdatedAt { get; set; }
 
     /// <summary>
-    /// Indikerar om kontot är aktivt
+    /// Indicates if the account is active
     /// </summary>
     public bool IsActive { get; set; } = true;
 }

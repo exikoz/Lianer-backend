@@ -4,11 +4,11 @@ using Lianer.Core.API.Models;
 namespace Lianer.Core.API.Services;
 
 /// <summary>
-/// Service för autentisering och användarhantering
+/// Service for authentication and user management
 /// </summary>
 public class AuthService : IAuthService
 {
-    // TODO: Injicera DbContext när det är konfigurerat
+    // TODO: Inject DbContext when configured
     // private readonly ApplicationDbContext _context;
     private readonly ILogger<AuthService> _logger;
 
@@ -18,20 +18,20 @@ public class AuthService : IAuthService
     }
 
     /// <summary>
-    /// Skapar en ny användare (POST /api/v1/users)
+    /// Creates a new user (POST /api/v1/users)
     /// </summary>
     public async Task<RegisterResponseDto> RegisterAsync(RegisterRequestDto request)
     {
-        _logger.LogInformation("Försöker skapa användare med e-post: {Email}", request.Email);
+        _logger.LogInformation("Attempting to create user with email: {Email}", request.Email);
 
-        // TODO: Kontrollera om e-post redan finns
+        // TODO: Check if email already exists
         // var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
         // if (existingUser != null)
         // {
-        //     throw new InvalidOperationException("E-postadressen är redan registrerad");
+        //     throw new InvalidOperationException("Email address is already registered");
         // }
 
-        // TODO: Hasha lösenord med BCrypt
+        // TODO: Hash password with BCrypt
         // string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
         var user = new User
@@ -39,16 +39,16 @@ public class AuthService : IAuthService
             Id = Guid.NewGuid(),
             FullName = request.FullName,
             Email = request.Email,
-            PasswordHash = "TEMP_HASH", // TODO: Ersätt med BCrypt hash
+            PasswordHash = "TEMP_HASH", // TODO: Replace with BCrypt hash
             CreatedAt = DateTime.UtcNow,
             IsActive = true
         };
 
-        // TODO: Spara till databas
+        // TODO: Save to database
         // _context.Users.Add(user);
         // await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Användare skapad framgångsrikt: {UserId}", user.Id);
+        _logger.LogInformation("User created successfully: {UserId}", user.Id);
 
         return new RegisterResponseDto
         {
