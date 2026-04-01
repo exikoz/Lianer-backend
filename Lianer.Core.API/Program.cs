@@ -11,14 +11,14 @@ namespace Lianer.Core.API
 
             // Add services to the container.
 
-            // Konfigurera JSON med camelCase för frontend-synk
+            // Configure JSON serialization with camelCase for frontend compatibility
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
                 {
                     options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
                 });
 
-            // Registrera Services (DI)
+            // Register application services (DI)
             builder.Services.AddScoped<IAuthService, AuthService>();
 
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
