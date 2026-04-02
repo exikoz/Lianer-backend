@@ -28,11 +28,23 @@ public class User
     public string Email { get; set; } = string.Empty;
 
     /// <summary>
-    /// Hashed password (BCrypt)
+    /// Hashed password (BCrypt) - nullable for external providers
+    /// </summary>
+    [MaxLength(255)]
+    public string? PasswordHash { get; set; }
+
+    /// <summary>
+    /// External provider ID (e.g., Google user ID)
+    /// </summary>
+    [MaxLength(255)]
+    public string? ExternalProviderId { get; set; }
+
+    /// <summary>
+    /// Authentication provider (Local, Google, Microsoft, etc.)
     /// </summary>
     [Required]
-    [MaxLength(255)]
-    public string PasswordHash { get; set; } = string.Empty;
+    [MaxLength(50)]
+    public string Provider { get; set; } = "Local";
 
     /// <summary>
     /// Timestamp when the account was created
