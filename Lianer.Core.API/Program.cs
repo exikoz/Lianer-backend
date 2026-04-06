@@ -1,4 +1,6 @@
 
+using Lianer.Core.API.Services;
+
 namespace Lianer.Core.API
 {
     public class Program
@@ -9,7 +11,16 @@ namespace Lianer.Core.API
 
             // Add services to the container.
 
-            builder.Services.AddControllers();
+            // Configure JSON serialization with camelCase for frontend compatibility
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+                });
+
+            // Register application services (DI)
+            builder.Services.AddScoped<IAuthService, AuthService>();
+
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
