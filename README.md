@@ -64,5 +64,5 @@ Seamless Google Sign-In with automatic user registration for first-time users. F
 
 **API Architects - .NET Team Malmö:**
 - [Joco Borghol](https://github.com/JocoBorghol)
-- [Alexander](https://github.com/alexanderjson)
-- [Hussein](https://github.com/exikoz)
+- [Alexander Jansson](https://github.com/alexanderjson)
+- [Hussein Hasnawy](https://github.com/exikoz)
