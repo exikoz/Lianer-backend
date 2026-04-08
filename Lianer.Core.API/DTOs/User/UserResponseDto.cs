@@ -3,7 +3,7 @@ namespace Lianer.Core.API.DTOs.Auth;
 /// <summary>
 /// Response DTO for created user (POST /api/v1/users)
 /// </summary>
-public class RegisterResponseDto
+public class UserResponseDto
 {
     /// <summary>
     /// User's unique ID

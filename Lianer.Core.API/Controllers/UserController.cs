@@ -10,16 +10,25 @@ namespace Lianer.Core.API.Controllers;
 [ApiController]
 [Route("api/v1/users")]
 [Produces("application/json")]
-public class UsersController : ControllerBase
+public class UserController(IUserService service, UserContext context, ILogger<UserController> logger) : ControllerBase
 {
-    private readonly IAuthService _authService;
-    private readonly ILogger<UsersController> _logger;
+    private readonly IUserService _service = service;
+    private readonly ILogger<UserController> _logger = logger;
 
-    public UsersController(IAuthService authService, ILogger<UsersController> logger)
+    private readonly UserContext  _context = context;
+
+
+    [HttpGet]
+    [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UserResponseDto>> GetCurrentUser()
     {
-        _authService = authService;
-        _logger = logger;
+        var userId = _context.UserId; 
+        if (userId is null) return Unauthorized();
+        var user = _service.GetById(userId.Value); // Uses ".value" since GetById doesn't accept nullable id
+        return Ok(user);
     }
+
 
     /// <summary>
     /// Creates a new user account (registration)
@@ -29,14 +38,13 @@ public class UsersController : ControllerBase
     /// <response code="201">User created successfully</response>
     /// <response code="400">Invalid input or email already registered</response>
     [HttpPost]
-    [ProducesResponseType(typeof(RegisterResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<RegisterResponseDto>> CreateUser([FromBody] RegisterRequestDto request)
+    //TODO - extend actionresult?
+    public async Task<ActionResult<UserResponseDto>> CreateUser([FromBody] UserRequestDto request)
     {
         _logger.LogInformation("POST /api/v1/users called");
-
-        var response = await _authService.RegisterAsync(request);
-
+        var response = await _service.CreateUser(request);
         return CreatedAtAction(
             nameof(GetUser),
             new { id = response.UserId },
@@ -44,18 +52,22 @@ public class UsersController : ControllerBase
         );
     }
 
+
+
     /// <summary>
     /// Gets a specific user (placeholder for future implementation)
     /// </summary>
     /// <param name="id">User ID</param>
     /// <returns>User</returns>
     [HttpGet("{id}")]
-    [ProducesResponseType(typeof(RegisterResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<RegisterResponseDto>> GetUser(Guid id)
+    public async Task<ActionResult<UserResponseDto>> GetUser(Guid id)
     {
-        // TODO: Implement in future ticket
         _logger.LogInformation("GET /api/v1/users/{Id} called", id);
-        return NotFound(new { message = "Endpoint not yet implemented" });
+        return await _service.GetById(id);
     }
+
+
+
 }

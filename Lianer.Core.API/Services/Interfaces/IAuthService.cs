@@ -7,12 +7,6 @@ namespace Lianer.Core.API.Services;
 /// </summary>
 public interface IAuthService
 {
-    /// <summary>
-    /// Creates a new user (POST /api/v1/users)
-    /// </summary>
-    /// <param name="request">User data</param>
-    /// <returns>Created user</returns>
-    Task<RegisterResponseDto> RegisterAsync(RegisterRequestDto request);
 
     /// <summary>
     /// Authenticates a user and creates a session (POST /api/v1/sessions)

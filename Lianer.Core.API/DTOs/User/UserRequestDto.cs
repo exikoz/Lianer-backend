@@ -5,7 +5,7 @@ namespace Lianer.Core.API.DTOs.Auth;
 /// <summary>
 /// Request DTO for creating a new user (POST /api/v1/users)
 /// </summary>
-public class RegisterRequestDto
+public class UserRequestDto
 {
     /// <summary>
     /// User's full name
