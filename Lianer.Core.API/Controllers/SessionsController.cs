@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Lianer.Core.API.DTOs.Auth;
 using Lianer.Core.API.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +9,8 @@ namespace Lianer.Core.API.Controllers;
 /// Controller for session management (login/logout)
 /// </summary>
 [ApiController]
-[Route("api/v1/sessions")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/sessions")]
 [Produces("application/json")]
 public class SessionsController : ControllerBase
 {
