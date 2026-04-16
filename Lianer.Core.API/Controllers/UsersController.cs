@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Lianer.Core.API.DTOs.Auth;
 using Lianer.Core.API.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +9,8 @@ namespace Lianer.Core.API.Controllers;
 /// Controller for user management (RESTful resource: users)
 /// </summary>
 [ApiController]
-[Route("api/v1/users")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/users")]
 [Produces("application/json")]
 public class UsersController : ControllerBase
 {
@@ -39,7 +41,7 @@ public class UsersController : ControllerBase
 
         return CreatedAtAction(
             nameof(GetUser),
-            new { id = response.UserId },
+            new { version = "1.0", id = response.UserId },
             response
         );
     }
