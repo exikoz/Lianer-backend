@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Lianer.Core.API.Models;
 
 namespace Lianer.Core.API.DTOs;
 
@@ -10,9 +11,15 @@ public class CreateContactRequest
     /// <summary>
     /// Contact name. Required, max 200 characters.
     /// </summary>
-    [Required(ErrorMessage = "Name is required.")]
-    [StringLength(200, MinimumLength = 1, ErrorMessage = "Name must be between 1 and 200 characters.")]
-    public string Name { get; set; } = string.Empty;
+    [Required(ErrorMessage = "First Name is required.")]
+    [StringLength(100, MinimumLength = 1, ErrorMessage = "First Name must be between 1 and 100 characters.")]
+    public string FirstName { get; set; } = string.Empty;
+    /// <summary>
+    /// Contact name. Required, max 200 characters.
+    /// </summary>
+    [Required(ErrorMessage = "Last Name is required.")]
+    [StringLength(100, MinimumLength = 1, ErrorMessage = "Last Name must be between 1 and 100 characters.")]
+    public string LastName { get; set; } = string.Empty;
 
     /// <summary>
     /// Job title / role. Max 200 characters.
@@ -44,9 +51,10 @@ public class CreateContactRequest
     /// <summary>
     /// Contact status. Must be one of: Ej kontaktad, Pågående, Klar, Förlorad, Återkom.
     /// </summary>
-    [RegularExpression(@"^(Ej kontaktad|Pågående|Klar|Förlorad|Återkom)$",
+   // [RegularExpression(@"^(Ej kontaktad|Pågående|Klar|Förlorad|Återkom)$",
+   [RegularExpression(@"^(InteKontaktad|Pågående|Klar|Förlorad|Återkom)$",
         ErrorMessage = "Status must be one of: Ej kontaktad, Pågående, Klar, Förlorad, Återkom.")]
-    public string Status { get; set; } = "Ej kontaktad";
+    public ContactStatus Status { get; set; } = ContactStatus.EjKontaktad;
 
     /// <summary>
     /// Person assigned to this contact. Max 200 characters.

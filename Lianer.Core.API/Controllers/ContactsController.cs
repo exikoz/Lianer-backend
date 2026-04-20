@@ -5,6 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lianer.Core.API.Controllers;
 
+
+//TODO : SKA FIXA DENNA /Alexander
+
+
+/*
 /// <summary>
 /// Manages CRM contact resources.
 /// </summary>
@@ -14,7 +19,7 @@ namespace Lianer.Core.API.Controllers;
 [Produces("application/json")]
 public class ContactsController : ControllerBase
 {
-    private static readonly List<ContactItem> _contacts = [];
+    private static readonly List<Contact> _contacts = [];
     private static int _nextId = 1;
     private readonly ILogger<ContactsController> _logger;
 
@@ -47,7 +52,7 @@ public class ContactsController : ControllerBase
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(ContactResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<ContactResponse> GetById(int id)
+    public ActionResult<ContactResponse> GetById(Guid id)
     {
         var contact = _contacts.FirstOrDefault(c => c.Id == id);
         if (contact is null)
@@ -71,17 +76,17 @@ public class ContactsController : ControllerBase
         _logger.LogInformation("POST /api/v1/contacts called");
 
         var duplicate = _contacts.FirstOrDefault(c =>
-            c.Name.Equals(request.Name.Trim(), StringComparison.OrdinalIgnoreCase));
+            c.FirstName.Equals(request.FirstName.Trim(), StringComparison.OrdinalIgnoreCase));
         if (duplicate is not null)
         {
             ModelState.AddModelError("Name", $"A contact with the name \"{request.Name}\" already exists.");
             return ValidationProblem();
         }
 
-        var contact = new ContactItem
+        var contact = new Contact
         {
-            Id = _nextId++,
-            Name = request.Name.Trim(),
+            Id = new Guid(),
+            FirstName = request.FirstName.Trim(),
             Role = request.Role.Trim(),
             Company = request.Company.Trim(),
             Phone = request.Phone,
@@ -202,3 +207,4 @@ public class ContactsController : ControllerBase
         }).ToList()
     };
 }
+*/
