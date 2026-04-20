@@ -21,12 +21,12 @@ where TEntity : class
         throw new NotImplementedException();
     }
 
-    public virtual async Task<TEntity> GetById(Guid Id, CancellationToken ct)
+    public Task GetById(Guid id)
     {
         throw new NotImplementedException();
     }
 
-    public virtual async Task<TEntity> Update(TEntity entity, CancellationToken ct)
+    public Task<TEntity> Update(TEntity entity, CancellationToken ct)
     {
         throw new NotImplementedException();
     }
