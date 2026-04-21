@@ -9,4 +9,9 @@ public class UserRepository(AppDbContext db) : ACrud<User>(db), IUserRepository
     {
         throw new NotImplementedException();
     }
+
+    public async Task<UserSummary> GetUserSummaryById(Guid id)
+    {
+        throw new NotImplementedException();
+    }
 }

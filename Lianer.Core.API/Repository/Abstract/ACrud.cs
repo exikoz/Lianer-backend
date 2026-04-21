@@ -1,4 +1,5 @@
 using Lianer.Core.API.Data;
+using Lianer.Core.API.Models;
 using Microsoft.EntityFrameworkCore;
 
 public abstract class ACrud<TEntity>(AppDbContext context) : ICrud<TEntity>
@@ -16,12 +17,12 @@ where TEntity : class
         return entity;    
     }
 
-    public virtual async Task Delete(TEntity entity, CancellationToken ct)
+    public virtual async Task Delete(Guid Id, CancellationToken ct)
     {
         throw new NotImplementedException();
     }
 
-    public Task GetById(Guid id)
+    public async Task<TEntity> GetById(Guid Id)
     {
         throw new NotImplementedException();
     }
@@ -30,6 +31,8 @@ where TEntity : class
     {
         throw new NotImplementedException();
     }
+
+  
 }
 
 
