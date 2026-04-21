@@ -36,10 +36,12 @@ public class AuthService : IAuthService
         // TODO: Hash password with BCrypt
         string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
+        var nameParts = (request.FullName ?? "").Split(' ', 2);
         var user = new User
         {
             Id = Guid.NewGuid(),
-            FullName = request.FullName,
+            FirstName = nameParts[0],
+            LastName = nameParts.Length > 1 ? nameParts[1] : string.Empty,
             Email = request.Email,
             PasswordHash = passwordHash,
             CreatedAt = DateTime.UtcNow,
@@ -80,7 +82,8 @@ public class AuthService : IAuthService
         var user = new User
         {
             Id = Guid.NewGuid(),
-            FullName = "Test User",
+            FirstName = "Test",
+            LastName = "User",
             Email = request.Email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"), // Mock hash
             CreatedAt = DateTime.UtcNow,
@@ -146,10 +149,12 @@ public class AuthService : IAuthService
             // Auto-register new user from Google
             _logger.LogInformation("Auto-registering new Google user: {Email}", googleUser.Email);
             
+            var googleNameParts = (googleUser.Name ?? "").Split(' ', 2);
             user = new User
             {
                 Id = Guid.NewGuid(),
-                FullName = googleUser.Name,
+                FirstName = googleNameParts[0],
+                LastName = googleNameParts.Length > 1 ? googleNameParts[1] : string.Empty,
                 Email = googleUser.Email,
                 ExternalProviderId = googleUser.Id,
                 Provider = "Google",
