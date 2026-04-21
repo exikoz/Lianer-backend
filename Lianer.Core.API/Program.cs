@@ -1,8 +1,11 @@
-
 using System.Text;
+using System.Threading.RateLimiting;
 using Asp.Versioning;
+using Lianer.Core.API.Filters;
+using Lianer.Core.API.Middleware;
 using Lianer.Core.API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
@@ -14,14 +17,18 @@ namespace Lianer.Core.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            // ── Services ──────────────────────────────────────────────
 
             // Configure JSON serialization with camelCase for frontend compatibility
-            builder.Services.AddControllers()
-                .AddJsonOptions(options =>
-                {
-                    options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
-                });
+            builder.Services.AddControllers(options =>
+            {
+                // Register custom validation filter globally
+                options.Filters.Add<ValidateModelFilter>();
+            })
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+            });
 
             // Register application services (DI)
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -38,8 +45,9 @@ namespace Lianer.Core.API
 
             // Configure JWT Authentication
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-            var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured in User Secrets");
-            
+            var secretKey = jwtSettings["SecretKey"]
+                ?? throw new InvalidOperationException("JWT SecretKey not configured in User Secrets");
+
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
@@ -56,10 +64,38 @@ namespace Lianer.Core.API
                     };
                 });
 
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+            // Configure CORS — strict policy, no AllowAnyOrigin
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("DefaultPolicy", policy =>
+                {
+                    policy.WithOrigins(
+                            builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+                            ?? ["http://localhost:5173", "http://localhost:3000"])
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
+            });
+
+            // Configure Rate Limiting — Fixed Window
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+                options.AddFixedWindowLimiter("fixed", limiterOptions =>
+                {
+                    limiterOptions.PermitLimit = 100;
+                    limiterOptions.Window = TimeSpan.FromMinutes(1);
+                    limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    limiterOptions.QueueLimit = 10;
+                });
+            });
+
+            // OpenAPI
             builder.Services.AddOpenApi();
 
-            // Configure API versioning (required: Asp.Versioning.Http)
+            // API versioning (Asp.Versioning)
             builder.Services.AddApiVersioning(options =>
             {
                 options.DefaultApiVersion = new ApiVersion(1, 0);
@@ -72,22 +108,44 @@ namespace Lianer.Core.API
                 options.SubstituteApiVersionInUrl = true;
             });
 
+            // Validate DI on build to catch missing registrations early
+            builder.Host.UseDefaultServiceProvider(options =>
+            {
+                options.ValidateScopes = true;
+                options.ValidateOnBuild = true;
+            });
+
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.MapOpenApi();
-                app.MapScalarApiReference(); // Add Scalar UI for API documentation
-            }
+            // ── Middleware pipeline (correct order) ───────────────────
+            // 1. Exception handling (outermost — catches everything)
+            app.UseMiddleware<ExceptionMiddleware>();
 
+            // 2. HTTPS redirection
             app.UseHttpsRedirection();
 
+            // 3. CORS
+            app.UseCors("DefaultPolicy");
+
+            // 4. Rate limiting
+            app.UseRateLimiter();
+
+            // 5. Routing (implicit with MapControllers, but auth needs it before)
+            app.UseRouting();
+
+            // 6. Authentication & Authorization
             app.UseAuthentication();
             app.UseAuthorization();
 
+            // 7. OpenAPI / Scalar (dev only)
+            if (app.Environment.IsDevelopment())
+            {
+                app.MapOpenApi();
+                app.MapScalarApiReference();
+            }
 
-            app.MapControllers();
+            app.MapControllers()
+                .RequireRateLimiting("fixed");
 
             app.Run();
         }
