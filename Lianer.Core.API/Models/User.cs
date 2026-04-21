@@ -64,7 +64,7 @@ public class User
     /// Indicates if the account is active
     /// </summary>
     public bool IsActive { get; set; } = true;
-    public Activity(string Description, Guid? AssignedTo, ){}
+
 
     protected User(){}
     public User(string firstName, string lastName, string email, string passwordHash)
