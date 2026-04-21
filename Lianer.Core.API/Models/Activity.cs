@@ -5,12 +5,12 @@ public class Activity
 {
     public Guid Id { get; set; }
 
-    public required string Description { get; set; }
+    public string? Description { get; set; }
 
     // FK to UserId
     public Guid? AssignedTo { get; set; }
 
-    public required Guid CreatedBy { get; set; }
+    public Guid CreatedBy { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
@@ -29,7 +29,8 @@ public class Activity
 
 
 
-    protected Activity(){}
+    protected Activity()
+    {    }
     public Activity(
         string description,
         Guid? assignedTo,
@@ -57,6 +58,7 @@ public class Activity
         if(startDate != null) StartDate = startDate.Value;
         if(endDate != null) EndDate = endDate.Value;
         if(status != null) Status = status.Value;
+        UpdatedAt = DateTime.UtcNow;
 
     }
 

@@ -38,5 +38,5 @@ public class ActivityRepository(AppDbContext context) : ACrud<Activity>(context)
         .ToListAsync(ct);
     }
 
-
+ 
 }
