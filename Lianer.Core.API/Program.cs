@@ -1,11 +1,14 @@
 using System.Text;
 using System.Threading.RateLimiting;
 using Asp.Versioning;
+using Lianer.Core.API.Data;
 using Lianer.Core.API.Filters;
 using Lianer.Core.API.Middleware;
+using Lianer.Core.API.Models;
 using Lianer.Core.API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
@@ -29,6 +32,10 @@ namespace Lianer.Core.API
             {
                 options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
             });
+
+            // Database (EF Core InMemory)
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseInMemoryDatabase("LianerDb"));
 
             // Register application services (DI)
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -63,6 +70,8 @@ namespace Lianer.Core.API
                         ClockSkew = TimeSpan.Zero
                     };
                 });
+
+            builder.Services.AddAuthorization();
 
             // Configure CORS — strict policy, no AllowAnyOrigin
             builder.Services.AddCors(options =>
@@ -117,6 +126,13 @@ namespace Lianer.Core.API
 
             var app = builder.Build();
 
+            // Ensure database is created
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                db.Database.EnsureCreated();
+            }
+
             // ── Middleware pipeline (correct order) ───────────────────
             // 1. Exception handling (outermost — catches everything)
             app.UseMiddleware<ExceptionMiddleware>();
@@ -130,7 +146,7 @@ namespace Lianer.Core.API
             // 4. Rate limiting
             app.UseRateLimiter();
 
-            // 5. Routing (implicit with MapControllers, but auth needs it before)
+            // 5. Routing
             app.UseRouting();
 
             // 6. Authentication & Authorization
