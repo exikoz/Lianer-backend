@@ -4,10 +4,32 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- API versioning -->
+    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.1" />
+
+    <!-- Azure Key Vault -->
+    <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.5.0" />
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
+
+    <!-- JWT Authentication -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.14" />
+
+    <!-- OpenAPI + Scalar docs -->
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.14" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.13.18" />
+
+    <!-- Database (InMemory matching Core.API) -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.9" />
+
+    <!-- Polly – resilience for Typed Client (Retry + Circuit Breaker) -->
+    <PackageReference Include="Polly" Version="8.6.6" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.0.0" />
   </ItemGroup>
 
 </Project>
