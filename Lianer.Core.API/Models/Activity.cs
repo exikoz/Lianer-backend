@@ -1,3 +1,4 @@
+using Lianer.Core.API.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 public class Activity
@@ -9,7 +10,7 @@ public class Activity
     // FK to UserId
     public Guid? AssignedTo { get; set; }
 
-    public required string CreatedBy { get; set; }
+    public required Guid? CreatedBy { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
@@ -27,4 +28,11 @@ public class Activity
     public Note? Note { get; set; } = null!;
 
     public ActivityStatus Status { get; set; } = ActivityStatus.Pending;
+
+
+
+    protected Activity(){}
+    public Activity(string Description, ){}
+
+
 }
