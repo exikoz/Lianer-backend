@@ -36,9 +36,10 @@ public class AuthService : IAuthService
         // TODO: Hash password with BCrypt
         string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
+        var nameParts = (request.FullName ?? "").Split(' ', 2);
         var user = new User(
-            "Test",
-            "User",
+            nameParts[0],
+            nameParts.Length > 1 ? nameParts[1] : string.Empty,
             request.Email,
             passwordHash
         );
@@ -140,9 +141,10 @@ public class AuthService : IAuthService
             // Auto-register new user from Google
             _logger.LogInformation("Auto-registering new Google user: {Email}", googleUser.Email);
             
+            var googleNameParts = (googleUser.Name ?? "").Split(' ', 2);
             user = User.CreateExternal(
-                googleUser.GivenName,
-                googleUser.FamilyName,
+                googleNameParts[0],
+                googleNameParts.Length > 1 ? googleNameParts[1] : string.Empty,
                 googleUser.Email,
                 "Google",
                 googleUser.Id

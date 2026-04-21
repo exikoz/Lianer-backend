@@ -7,13 +7,8 @@ public static class UserExtensions
     {
         return query.Select(u => new UserSummary
         (
-                u.Id,
-                u.FirstName,
-                u.LastName,
-                u.Email,
-                u.CreatedAt,
-                u.IsActive,
-                u.Provider
+                u.FullName,
+                u.Email
             )
         );
     }

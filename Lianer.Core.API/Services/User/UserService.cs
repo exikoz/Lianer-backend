@@ -82,18 +82,3 @@ public class UserService(UserRepository r)
     #endregion
 }
 
-
-public class NoteService
-{
-    
-}
-
-public class TaskService
-{
-    
-}
-
-public class ContactService
-{
-    
-}
