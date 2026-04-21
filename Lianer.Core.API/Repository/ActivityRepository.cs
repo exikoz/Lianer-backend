@@ -33,7 +33,7 @@ public class ActivityRepository(AppDbContext context) : ACrud<Activity>(context)
         return await _c.Activities
         .AsNoTracking()
         .Where(a => a.AssignedTo == userId)
-        .OrderBy(a => a.Deadline)
+        .OrderBy(a => a.EndDate)
         .Paginate(currentPage, pageSize)
         .ToListAsync(ct);
     }
