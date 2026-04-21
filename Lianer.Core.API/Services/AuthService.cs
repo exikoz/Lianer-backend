@@ -37,16 +37,12 @@ public class AuthService : IAuthService
         string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
         var nameParts = (request.FullName ?? "").Split(' ', 2);
-        var user = new User
-        {
-            Id = Guid.NewGuid(),
-            FirstName = nameParts[0],
-            LastName = nameParts.Length > 1 ? nameParts[1] : string.Empty,
-            Email = request.Email,
-            PasswordHash = passwordHash,
-            CreatedAt = DateTime.UtcNow,
-            IsActive = true
-        };
+        var user = new User(
+            nameParts[0],
+            nameParts.Length > 1 ? nameParts[1] : string.Empty,
+            request.Email,
+            passwordHash
+        );
 
         // TODO: Save to database
         // _context.Users.Add(user);
@@ -79,16 +75,12 @@ public class AuthService : IAuthService
 
         // TODO: For now, create a mock user for testing
         // This will be replaced with actual database lookup
-        var user = new User
-        {
-            Id = Guid.NewGuid(),
-            FirstName = "Test",
-            LastName = "User",
-            Email = request.Email,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"), // Mock hash
-            CreatedAt = DateTime.UtcNow,
-            IsActive = true
-        };
+        var user = new User(
+            "Test",
+            "User",
+            request.Email,
+            BCrypt.Net.BCrypt.HashPassword("password123")
+        );
 
         // Verify password
         bool isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
@@ -150,18 +142,13 @@ public class AuthService : IAuthService
             _logger.LogInformation("Auto-registering new Google user: {Email}", googleUser.Email);
             
             var googleNameParts = (googleUser.Name ?? "").Split(' ', 2);
-            user = new User
-            {
-                Id = Guid.NewGuid(),
-                FirstName = googleNameParts[0],
-                LastName = googleNameParts.Length > 1 ? googleNameParts[1] : string.Empty,
-                Email = googleUser.Email,
-                ExternalProviderId = googleUser.Id,
-                Provider = "Google",
-                PasswordHash = null, // No password for Google users
-                CreatedAt = DateTime.UtcNow,
-                IsActive = true
-            };
+            user = User.CreateExternal(
+                googleNameParts[0],
+                googleNameParts.Length > 1 ? googleNameParts[1] : string.Empty,
+                googleUser.Email,
+                "Google",
+                googleUser.Id
+            );
 
             // TODO: Save to database
             // _context.Users.Add(user);

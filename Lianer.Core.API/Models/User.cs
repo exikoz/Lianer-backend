@@ -64,4 +64,44 @@ public class User
     /// Indicates if the account is active
     /// </summary>
     public bool IsActive { get; set; } = true;
+
+    protected User(){}
+    public User(string firstName, string lastName, string email, string passwordHash)
+    {
+        Id = Guid.NewGuid();
+        FirstName = firstName;
+        LastName = lastName;
+        PasswordHash = passwordHash;
+        Email = email;
+        CreatedAt = DateTime.UtcNow;
+        IsActive = true;
+        Provider = "Local";
+    }
+
+    public void UpdateProfile(string? firstName, string? lastName, string? email)
+    {
+        if (!string.IsNullOrWhiteSpace(firstName)) FirstName = firstName;
+        if (!string.IsNullOrWhiteSpace(lastName)) LastName = lastName;
+        if (!string.IsNullOrWhiteSpace(email)) Email = email;
+        UpdatedAt = DateTime.UtcNow;
+    }
+    public void UpdatePassword(string newHash)
+    {
+        PasswordHash = newHash;
+        UpdatedAt = DateTime.UtcNow;
+    }
+    public static User CreateExternal(string firstName, string lastName, string email, string provider, string externalId)
+    {
+        return new User
+        {
+            Id = Guid.NewGuid(),
+            FirstName = firstName,
+            LastName = lastName,
+            Email = email,
+            Provider = provider,
+            ExternalProviderId = externalId,
+            CreatedAt = DateTime.UtcNow,
+            IsActive = true
+        };
+    }
 }
