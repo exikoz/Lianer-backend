@@ -76,7 +76,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 
             entity.HasIndex(x => x.AssignedTo);
             entity.HasIndex(x => x.Status);
-            entity.HasIndex(x => x.Deadline);
 
             entity.HasOne<User>()
                 .WithMany()
