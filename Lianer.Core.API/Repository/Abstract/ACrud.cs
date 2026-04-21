@@ -2,6 +2,13 @@ using Lianer.Core.API.Data;
 using Lianer.Core.API.Models;
 using Microsoft.EntityFrameworkCore;
 
+/// <summary>
+/// This abstract class centralises our CRUD logic.
+/// If a repository extends this class, any service can
+/// use these functions with that repository. 
+/// </summary>
+/// <typeparam name="TEntity">SQL table being used</typeparam>
+/// <param name="context">AppDbContext</param>
 public abstract class ACrud<TEntity>(AppDbContext context) : ICrud<TEntity>
 where TEntity : class
 
