@@ -7,7 +7,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     : DbContext(options)
 {
     public DbSet<User> Users => Set<User>();
-    public DbSet<Activity> Tasks => Set<Activity>();
+    public DbSet<Activity> Activities => Set<Activity>();
     public DbSet<Note> Notes => Set<Note>();
     public DbSet<Contact> Contacts => Set<Contact>();
 

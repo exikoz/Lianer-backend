@@ -3,29 +3,40 @@ using Lianer.Core.API.Data;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 
-public static class QueryExtensions
+
+
+public class ActivityRepository(AppDbContext context) : ACrud<Activity>(context),  IActivityRepository
 {
-    public static IQueryable<T> Paginate<T>
-    (
-        this IQueryable<T> query, int currentPage, int pageSize
-    )
+    protected readonly AppDbContext _c = context;
+
+
+    public async Task<IReadOnlyList<Activity>> GetLastUpdatedActivities(int currentPage, int pageSize, CancellationToken ct)
     {
-        return query.Skip((currentPage-1)*pageSize).Take(pageSize);
-    }
-}
-
-public class ActivityRepository(AppDbContext context) : ACrud<Activity>(context), ITaskRepository
-{
-    protected readonly AppDbContext _context = context;
-
-
-    public async Task<IReadOnlyList<Activity>> GetMultipleTasksPaged(int currentPage, int pageSize, CancellationToken ct)
-    {
-        var tasks = await _context.Tasks
+        return await _c.Activities
         .AsNoTracking()
         .OrderByDescending(t => t.UpdatedAt)
         .Paginate(currentPage, pageSize)
         .ToListAsync(ct);
-        return tasks;
     }
+
+    public async Task<IReadOnlyList<Activity>> GetActivitiesByUser(Guid userId, int currentPage, int pageSize, CancellationToken ct)
+    {
+        return await _c.Activities
+        .AsNoTracking()
+        .Where(t => t.AssignedTo == userId)
+        .Paginate(currentPage, pageSize)
+        .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<Activity>> GetUserActivitiesByDeadline(Guid userId, int currentPage, int pageSize, CancellationToken ct)
+    {
+        return await _c.Activities
+        .AsNoTracking()
+        .Where(a => a.AssignedTo == userId)
+        .OrderBy(a => a.Deadline)
+        .Paginate(currentPage, pageSize)
+        .ToListAsync(ct);
+    }
+
+
 }

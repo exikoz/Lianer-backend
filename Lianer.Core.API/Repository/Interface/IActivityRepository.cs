@@ -1,6 +1,6 @@
-using Lianer.Core.API.Models;
-
-public interface ITaskRepository : ICrud<Activity>
+public interface IActivityRepository
 {
-    Task<IReadOnlyList<Activity>>GetMultipleTasksPaged(int currentPage, int pageSize, CancellationToken ct);
+    Task<IReadOnlyList<Activity>> GetActivitiesByUser(Guid userId, int currentPage, int pageSize, CancellationToken ct);
+    Task<IReadOnlyList<Activity>> GetLastUpdatedActivities(int currentPage, int pageSize, CancellationToken ct);
+    Task<IReadOnlyList<Activity>> GetUserActivitiesByDeadline(Guid userId, int currentPage, int pageSize, CancellationToken ct);
 }
