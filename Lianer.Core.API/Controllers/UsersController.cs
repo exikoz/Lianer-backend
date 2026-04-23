@@ -54,7 +54,7 @@ public class UsersController : ControllerBase
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(RegisterResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<RegisterResponseDto>> GetUser(Guid id)
+    public ActionResult<RegisterResponseDto> GetUser(Guid id)
     {
         // TODO: Implement in future ticket
         _logger.LogInformation("GET /api/v1/users/{Id} called", id);

@@ -1,10 +1,10 @@
 using System.Text;
 using System.Threading.RateLimiting;
 using Asp.Versioning;
+using Azure.Identity;
 using Lianer.Core.API.Data;
 using Lianer.Core.API.Filters;
 using Lianer.Core.API.Middleware;
-using Lianer.Core.API.Models;
 using Lianer.Core.API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
@@ -19,6 +19,13 @@ namespace Lianer.Core.API
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            // --- Azure Key Vault (Always active) ---
+            var vaultUri = builder.Configuration["AzureKeyVault:VaultUri"];
+            if (!string.IsNullOrEmpty(vaultUri))
+            {
+                builder.Configuration.AddAzureKeyVault(new Uri(vaultUri), new DefaultAzureCredential());
+            }
 
             // ── Services ──────────────────────────────────────────────
 
@@ -50,26 +57,36 @@ namespace Lianer.Core.API
                 client.DefaultRequestHeaders.Add("User-Agent", "Lianer-Backend/1.0");
             });
 
-            // Configure JWT Authentication
-            var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-            var secretKey = jwtSettings["SecretKey"]
-                ?? throw new InvalidOperationException("JWT SecretKey not configured in User Secrets");
+            // --- Configure JWT Authentication ---
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secretKey = jwtSettings["SecretKey"];
 
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuer = jwtSettings["Issuer"],
-                        ValidAudience = jwtSettings["Audience"],
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-                        ClockSkew = TimeSpan.Zero
-                    };
-                });
+// Förhindra krasch vid tester/utveckling om nyckeln saknas
+if (string.IsNullOrEmpty(secretKey))
+{
+    if (builder.Environment.IsProduction())
+    {
+        throw new InvalidOperationException("JWT SecretKey MUST be configured in Production!");
+    }
+    // Fallback för Development/Testing
+    secretKey = "DevelopmentSecretKeyMinstTrettioTvåTeckenLång!!"; 
+}
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings["Issuer"] ?? "LianerIssuer",
+            ValidAudience = jwtSettings["Audience"] ?? "LianerAudience",
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
 
             builder.Services.AddAuthorization();
 

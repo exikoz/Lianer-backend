@@ -1,3 +1,5 @@
+using Lianer.Core.API.Data;
+using Microsoft.EntityFrameworkCore;
 using Lianer.Core.API.DTOs.Auth;
 using Lianer.Core.API.Models;
 
@@ -8,13 +10,13 @@ namespace Lianer.Core.API.Services;
 /// </summary>
 public class AuthService : IAuthService
 {
-    // TODO: Inject DbContext when configured
-    // private readonly ApplicationDbContext _context;
+    private readonly AppDbContext _context;
     private readonly ILogger<AuthService> _logger;
     private readonly ITokenService _tokenService;
 
-    public AuthService(ILogger<AuthService> logger, ITokenService tokenService)
+    public AuthService(AppDbContext context, ILogger<AuthService> logger, ITokenService tokenService)
     {
+        _context = context;
         _logger = logger;
         _tokenService = tokenService;
     }
@@ -26,14 +28,14 @@ public class AuthService : IAuthService
     {
         _logger.LogInformation("Attempting to create user with email: {Email}", request.Email);
 
-        // TODO: Check if email already exists
-        // var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
-        // if (existingUser != null)
-        // {
-        //     throw new InvalidOperationException("Email address is already registered");
-        // }
+        // Check if email already exists
+        var emailExists = await _context.Users.AnyAsync(u => u.Email == request.Email);
+        if (emailExists)
+        {
+            throw new InvalidOperationException("Email address is already registered");
+        }
 
-        // TODO: Hash password with BCrypt
+        // Hash password with BCrypt
         string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
         var nameParts = (request.FullName ?? "").Split(' ', 2);
@@ -44,9 +46,9 @@ public class AuthService : IAuthService
             passwordHash
         );
 
-        // TODO: Save to database
-        // _context.Users.Add(user);
-        // await _context.SaveChangesAsync();
+        // Save to database
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
 
         _logger.LogInformation("User created successfully: {UserId}", user.Id);
 
@@ -66,21 +68,12 @@ public class AuthService : IAuthService
     {
         _logger.LogInformation("Attempting to authenticate user with email: {Email}", request.Email);
 
-        // TODO: Get user from database
-        // var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive);
-        // if (user == null)
-        // {
-        //     throw new UnauthorizedAccessException("Invalid email or password");
-        // }
-
-        // TODO: For now, create a mock user for testing
-        // This will be replaced with actual database lookup
-        var user = new User(
-            "Test",
-            "User",
-            request.Email,
-            BCrypt.Net.BCrypt.HashPassword("password123")
-        );
+        // Retrieve user from database
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+        if (user == null)
+        {
+            throw new UnauthorizedAccessException("Invalid email or password");
+        }
 
         // Verify password
         bool isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
@@ -117,42 +110,30 @@ public class AuthService : IAuthService
     {
         _logger.LogInformation("Processing Google SSO login for email: {Email}", googleUser.Email);
 
-        // TODO: Check if user exists in database by email and provider
-        // var existingUser = await _context.Users
-        //     .FirstOrDefaultAsync(u => u.Email == googleUser.Email && u.Provider == "Google");
+        // Check if user exists by email and external provider
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.Email == googleUser.Email && u.Provider == "Google");
 
-        User user;
-
-        // For now, create a mock user (will be replaced with database logic)
-        var existingUser = (User?)null; // Mock: no existing user
-
-        if (existingUser != null)
+        if (user == null)
         {
-            // User exists, update last login
-            _logger.LogInformation("Existing Google user found: {UserId}", existingUser.Id);
-            user = existingUser;
-            
-            // TODO: Update last login timestamp
-            // existingUser.UpdatedAt = DateTime.UtcNow;
-            // await _context.SaveChangesAsync();
-        }
-        else
-        {
-            // Auto-register new user from Google
+            // Auto-register new user if they don't exist
             _logger.LogInformation("Auto-registering new Google user: {Email}", googleUser.Email);
             
-            var googleNameParts = (googleUser.Name ?? "").Split(' ', 2);
+            var nameParts = (googleUser.Name ?? "").Split(' ', 2);
             user = User.CreateExternal(
-                googleNameParts[0],
-                googleNameParts.Length > 1 ? googleNameParts[1] : string.Empty,
+                nameParts[0],
+                nameParts.Length > 1 ? nameParts[1] : string.Empty,
                 googleUser.Email,
                 "Google",
                 googleUser.Id
             );
 
-            // TODO: Save to database
-            // _context.Users.Add(user);
-            // await _context.SaveChangesAsync();
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+        }
+        else
+        {
+            _logger.LogInformation("Existing Google user found: {UserId}", user.Id);
         }
 
         // Generate JWT token

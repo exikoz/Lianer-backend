@@ -15,9 +15,7 @@ namespace Lianer.Features.API.Controllers;
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
 [Produces("application/json")]
-[ApiController]
-[Authorize]
-public class LeadsController(IHunterService hunterService, FeaturesDbContext dbContext, ILogger<LeadsController> logger) : ControllerBase
+[ApiController]ss LeadsController(IHunterService hunterService, FeaturesDbContext dbContext, ILogger<LeadsController> logger) : ControllerBase
 {
     private readonly ILogger<LeadsController> _logger = logger;
 

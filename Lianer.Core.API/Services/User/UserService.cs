@@ -1,5 +1,6 @@
 using Lianer.Core.API.Common;
-using Lianer.Core.API.Models;
+using Lianer.Core.API.Models;   
+using Lianer.Core.API.DTOs.User;
 
 public class UserService(UserRepository r) : IUserService
 {
@@ -62,8 +63,7 @@ public class UserService(UserRepository r) : IUserService
     {
         Guard.Against.NullOrEmptyGuid(Id);
         var user = await _r.GetUserSummaryById(Id);
-        return user != null ? new UserSummary(user.Fullname, user.Email)
-        : throw new NotFoundException("User with id: {Id} could not be found or fetched", Id);
+        return user ?? throw new NotFoundException("User with id: {Id} could not be found or fetched", Id);
     }
     #endregion
 
