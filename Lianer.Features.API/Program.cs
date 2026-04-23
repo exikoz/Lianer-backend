@@ -8,6 +8,9 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Lianer.Features.API.Data;
 using Microsoft.EntityFrameworkCore;
+using Polly;
+using Polly.Retry;
+using Polly.CircuitBreaker;
 
 namespace Lianer.Features.API
 {
@@ -33,14 +36,65 @@ namespace Lianer.Features.API
             {
                 client.BaseAddress = new Uri("https://api.hunter.io/");
             })
-            .AddStandardResilienceHandler();
+            .AddStandardResilienceHandler(options =>
+            {
+                // Ensure it handles HttpRequestException and non-success status codes
+                options.Retry.ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+                    .Handle<HttpRequestException>()
+                    .HandleResult(r => !r.IsSuccessStatusCode);
 
-            // --- Core API Typed Client (K-126) ---
+                options.Retry.OnRetry = args =>
+                {
+                    Console.WriteLine($"[Polly: Retry] HunterClient attempt {args.AttemptNumber} due to: {args.Outcome.Exception?.Message ?? args.Outcome.Result?.StatusCode.ToString()}");
+                    return default;
+                };
+            });
+
+            // --- Core API Typed Client ---
+            // Configures a custom resilience pipeline for the Core API client.
+            // Includes exponential retry and a circuit breaker to prevent cascading failures.
             builder.Services.AddHttpClient<CoreApiClient>(client =>
             {
                 client.BaseAddress = new Uri("http://localhost:5297/");
             })
-            .AddStandardResilienceHandler();
+            .AddResilienceHandler("core-api-pipeline", pipeline =>
+            {
+                pipeline.AddRetry(new RetryStrategyOptions<HttpResponseMessage>
+                {
+                    MaxRetryAttempts = 3,
+                    BackoffType = DelayBackoffType.Exponential,
+                    UseJitter = true,
+                    Delay = TimeSpan.FromSeconds(2),
+                    OnRetry = args =>
+                    {
+                        Console.WriteLine($"[Polly: Retry] Attempt {args.AttemptNumber} for CoreApiClient due to: {args.Outcome.Exception?.Message ?? args.Outcome.Result?.StatusCode.ToString()}");
+                        return default;
+                    }
+                });
+
+                pipeline.AddCircuitBreaker(new CircuitBreakerStrategyOptions<HttpResponseMessage>
+                {
+                    FailureRatio = 0.5,
+                    SamplingDuration = TimeSpan.FromSeconds(30),
+                    MinimumThroughput = 2,
+                    BreakDuration = TimeSpan.FromSeconds(60),
+                    OnOpened = args =>
+                    {
+                        Console.WriteLine("[Polly: Circuit Breaker] Opened for 60 seconds. Core API is likely down.");
+                        return default;
+                    },
+                    OnClosed = args =>
+                    {
+                        Console.WriteLine("[Polly: Circuit Breaker] Closed. Core API is back online.");
+                        return default;
+                    },
+                    OnHalfOpened = args =>
+                    {
+                        Console.WriteLine("[Polly: Circuit Breaker] Half-Opened. Testing Core API health...");
+                        return default;
+                    }
+                });
+            });
 
             builder.Services.AddScoped<IHunterService, HunterService>();
 
