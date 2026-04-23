@@ -7,7 +7,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     : DbContext(options)
 {
     public DbSet<User> Users => Set<User>();
-    public DbSet<TaskItem> Tasks => Set<TaskItem>();
+    public DbSet<Activity> Activities => Set<Activity>();
     public DbSet<Note> Notes => Set<Note>();
     public DbSet<Contact> Contacts => Set<Contact>();
 
@@ -59,7 +59,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             entity.HasIndex(x => x.CreatedBy);
         });
 
-        builder.Entity<TaskItem>(entity =>
+        builder.Entity<Activity>(entity =>
         {
             entity.HasKey(x => x.Id);
 

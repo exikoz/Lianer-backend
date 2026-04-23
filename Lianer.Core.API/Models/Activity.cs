@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 
-public enum TaskStatus
+public enum ActivityStatus
 {
     Pending = 0,
     InProgress = 1,
@@ -9,7 +9,7 @@ public enum TaskStatus
     OnHold = 4
 }
 
-public class TaskItem
+public class Activity
 {
     public Guid Id { get; set; }
 
@@ -35,5 +35,5 @@ public class TaskItem
 
     public Note? Note { get; set; } = null!;
 
-    public TaskStatus Status { get; set; } = TaskStatus.Pending;
+    public ActivityStatus Status { get; set; } = ActivityStatus.Pending;
 }
