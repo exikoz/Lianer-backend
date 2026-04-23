@@ -35,6 +35,13 @@ namespace Lianer.Features.API
             })
             .AddStandardResilienceHandler();
 
+            // --- Core API Typed Client (K-126) ---
+            builder.Services.AddHttpClient<CoreApiClient>(client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5297/");
+            })
+            .AddStandardResilienceHandler();
+
             builder.Services.AddScoped<IHunterService, HunterService>();
 
             builder.Services.AddControllers();

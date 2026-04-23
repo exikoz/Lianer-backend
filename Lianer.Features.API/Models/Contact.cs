@@ -29,5 +29,10 @@ public class Contact
     /// </summary>
     public string Source { get; set; } = "Unknown";
     
+    /// <summary>
+    /// The ID of the team member assigned to this lead (from Core API)
+    /// </summary>
+    public Guid? AssignedTo { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

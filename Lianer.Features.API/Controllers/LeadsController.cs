@@ -1,6 +1,8 @@
 using Asp.Versioning;
+using Lianer.Features.API.Clients;
 using Lianer.Features.API.Data;
 using Lianer.Features.API.DTOs;
+using Lianer.Features.API.DTOs.Integration;
 using Lianer.Features.API.Models;
 using Lianer.Features.API.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -15,9 +17,189 @@ namespace Lianer.Features.API.Controllers;
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
 [Produces("application/json")]
-[ApiController]ss LeadsController(IHunterService hunterService, FeaturesDbContext dbContext, ILogger<LeadsController> logger) : ControllerBase
+[ApiController]
+public class LeadsController(IHunterService hunterService, CoreApiClient coreApiClient, FeaturesDbContext dbContext, ILogger<LeadsController> logger) : ControllerBase
 {
     private readonly ILogger<LeadsController> _logger = logger;
+
+    /// <summary>
+    /// Gets all leads currently in the features database, enriched with assigned user names from Core API.
+    /// </summary>
+    /// <returns>A list of enriched leads</returns>
+    [HttpGet]
+    public async Task<IActionResult> GetAllLeads()
+    {
+        _logger.LogInformation("GET /api/v1/leads called to list all leads (Enriched)");
+
+        // 1. Fetch all leads from local DB
+        var leads = await dbContext.Contacts.ToListAsync();
+
+        // 2. Fetch all users from Core API for mapping
+        IEnumerable<CoreUserSummaryDto> users = [];
+        try
+        {
+            users = await coreApiClient.GetUsersAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not fetch users from Core API for enrichment. Listing leads without names.");
+        }
+
+        // 3. Create a lookup dictionary for performance
+        var userMap = users.ToDictionary(u => u.UserId, u => u.FullName);
+
+        // 4. Map to enriched result
+        var enrichedLeads = leads.Select(l => new
+        {
+            l.Id,
+            l.FirstName,
+            l.LastName,
+            l.Email,
+            l.Organization,
+            l.Position,
+            l.Source,
+            AssignedToId = l.AssignedTo,
+            AssignedToName = l.AssignedTo.HasValue && userMap.TryGetValue(l.AssignedTo.Value, out var name) 
+                ? name 
+                : (l.AssignedTo.HasValue ? "User not found" : "Unassigned")
+        });
+
+        return Ok(enrichedLeads);
+    }
+
+    /// <summary>
+    /// Temporary endpoint to prepare test data for K-126 verification.
+    /// Dynamically links the latest lead with a live user from Core API.
+    /// </summary>
+    [HttpPost("prepare-test")]
+    public async Task<IActionResult> PrepareTest()
+    {
+        _logger.LogInformation("POST /api/v1/leads/prepare-test called (Bulk Mode)");
+
+        // 1. Fetch all leads
+        var allLeads = await dbContext.Contacts.ToListAsync();
+
+        if (allLeads == null || !allLeads.Any())
+        {
+            return NotFound("No leads found in the database. Please import some first!");
+        }
+
+        // 2. Fetch a live user from Core API
+        try
+        {
+            var users = await coreApiClient.GetUsersAsync();
+            var targetUser = users.FirstOrDefault();
+
+            if (targetUser == null)
+            {
+                return BadRequest("No users found in Core API. Please create a user first!");
+            }
+
+            // 3. Link ALL leads to this user
+            foreach (var lead in allLeads)
+            {
+                lead.AssignedTo = targetUser.UserId;
+            }
+            
+            await dbContext.SaveChangesAsync();
+
+            _logger.LogInformation("Linked {Count} leads to user {UserId}", allLeads.Count, targetUser.UserId);
+
+            return Ok(new
+            {
+                Message = $"All {allLeads.Count} leads have been successfully assigned to [{targetUser.FullName}]",
+                AssignedToId = targetUser.UserId,
+                AssignedToName = targetUser.FullName,
+                AffectedLeads = allLeads.Count
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during bulk test preparation");
+            return StatusCode(StatusCodes.Status500InternalServerError, "Could not communicate with Core API to fetch users.");
+        }
+    }
+
+    /// <summary>
+    /// Manually assigns a specific lead to a user.
+    /// </summary>
+    /// <param name="id">The lead ID</param>
+    /// <param name="userId">The user ID from Core API</param>
+    [HttpPatch("{id}/assign")]
+    public async Task<IActionResult> AssignLead(Guid id, [FromBody] Guid userId)
+    {
+        _logger.LogInformation("PATCH /api/v1/leads/{Id}/assign called with User {UserId}", id, userId);
+
+        // 1. Find the lead
+        var lead = await dbContext.Contacts.FindAsync(id);
+        if (lead == null) return NotFound("Lead not found.");
+
+        // 2. Optional: Verify user exists in Core API (Integration Check)
+        try
+        {
+            var user = await coreApiClient.GetUserSummaryAsync(userId);
+            if (user == null) return BadRequest("The specified User ID was not found in Core API.");
+            
+            // 3. Update and Save
+            lead.AssignedTo = userId;
+            await dbContext.SaveChangesAsync();
+
+            return Ok(new { 
+                Message = $"Lead [{lead.FirstName} {lead.LastName}] has been manually assigned to [{user.FullName}]",
+                LeadId = lead.Id,
+                AssignedToName = user.FullName
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error verifying user during manual assignment");
+            return StatusCode(StatusCodes.Status500InternalServerError, "Could not verify user with Core API.");
+        }
+    }
+
+    /// <summary>
+    /// Gets detailed information about a lead, including enriched data from the Core API
+    /// </summary>
+    /// <param name="id">The unique identifier of the lead</param>
+    /// <returns>Enriched lead details</returns>
+    [HttpGet("{id}/details")]
+    public async Task<IActionResult> GetLeadDetails(Guid id)
+    {
+        _logger.LogInformation("GET /api/v1/leads/{Id}/details called", id);
+
+        var lead = await dbContext.Contacts.FindAsync(id);
+        if (lead == null)
+        {
+            return NotFound();
+        }
+
+        string? assignedToName = null;
+        if (lead.AssignedTo.HasValue)
+        {
+            try
+            {
+                var userSummary = await coreApiClient.GetUserSummaryAsync(lead.AssignedTo.Value);
+                assignedToName = userSummary?.FullName;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not fetch user summary for assigned user {UserId}", lead.AssignedTo.Value);
+                // We continue even if the external call fails, but without the name
+            }
+        }
+
+        return Ok(new
+        {
+            lead.Id,
+            lead.FirstName,
+            lead.LastName,
+            lead.Email,
+            lead.Organization,
+            lead.Position,
+            AssignedToId = lead.AssignedTo,
+            AssignedToName = assignedToName ?? "Unassigned or user not found"
+        });
+    }
 
     /// <summary>
     /// Enriches a domain with lead information via Hunter.io

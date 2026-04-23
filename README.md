@@ -60,6 +60,32 @@ Seamless Google Sign-In with automatic user registration for first-time users. F
 
 ---
 
+## 🛠️ Microservice Integration
+
+The project implements a resilient **Service-to-Service** communication pattern using **Typed HttpClients** and **Standard Resilience Handlers** (Retry, Circuit Breaker).
+
+**Key Features:**
+- **Lead Enrichment**: Features API fetches real-time team member data from Core API.
+- **Bulk Operations**: Automated test data preparation for cross-service verification.
+- **External API**: Integration with **Hunter.io** for domain lead enrichment and bulk import.
+
+![Enriched Leads List](docs/images/api-documentation/k-126-final-enriched-leads-list.png)
+*Enriched lead list in Features API showing assigned team member names from Core API.*
+
+---
+
+## 📚 API Documentation
+
+Both services feature interactive API documentation via **Scalar** and **OpenAPI**.
+
+- **Core API**: `http://localhost:5297/scalar/v1`
+- **Features API**: `http://localhost:5266/scalar/v1`
+
+![Lead Import Test](docs/images/api-documentation/leads-import-scalar-test.png)
+*Testing bulk lead import from Hunter.io in Scalar.*
+
+---
+
 ## 👥 Team
 
 **API Architects - .NET Team Malmö:**

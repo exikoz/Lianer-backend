@@ -2,6 +2,7 @@ using Lianer.Core.API.Common;
 using Lianer.Core.API.Data;
 using Lianer.Core.API.Models;
 using Lianer.Core.API.DTOs.User;
+using Microsoft.EntityFrameworkCore;
 
 /// <summary>
 /// Repository for user-specific data operations
@@ -25,7 +26,17 @@ public class UserRepository(AppDbContext db) : ACrud<User>(db), IUserRepository
         var user = await _db.Users.FindAsync(id);
         if (user == null) return null!;
 
-        // Use constructor syntax for the positional record
+    // Use constructor syntax for the positional record
         return new UserSummary(user.Id, user.FullName, user.Email);
+    }
+
+    /// <summary>
+    /// Retrieves summaries for all users in the database
+    /// </summary>
+    public async Task<IEnumerable<UserSummary>> GetAllUserSummaries()
+    {
+        return await _db.Users
+            .Select(u => new UserSummary(u.Id, u.FullName, u.Email))
+            .ToListAsync();
     }
 }

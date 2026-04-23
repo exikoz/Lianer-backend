@@ -1,5 +1,6 @@
 using Lianer.Core.API.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Lianer.Core.API.Data;
 
@@ -119,19 +120,26 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                 .HasForeignKey(x => x.AssignedTo)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            var listComparer = new ValueComparer<List<string>>(
+                (c1, c2) => c1!.SequenceEqual(c2!),
+                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                c => c.ToList());
+
             entity.Property(x => x.Phone)
                 .HasConversion(
                     v => string.Join(';', v),
                     v => string.IsNullOrWhiteSpace(v)
                         ? new List<string>()
-                        : v.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList());
+                        : v.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList())
+                .Metadata.SetValueComparer(listComparer);
 
             entity.Property(x => x.Email)
                 .HasConversion(
                     v => string.Join(';', v),
                     v => string.IsNullOrWhiteSpace(v)
                         ? new List<string>()
-                        : v.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList());
+                        : v.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList())
+                .Metadata.SetValueComparer(listComparer);
 
             entity.OwnsOne(x => x.Social, social =>
             {

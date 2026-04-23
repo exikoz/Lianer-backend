@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using Lianer.Core.API.DTOs.Auth;
+using Lianer.Core.API.DTOs.User;
 using Lianer.Core.API.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,12 +16,27 @@ namespace Lianer.Core.API.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IUserService _userService;
     private readonly ILogger<UsersController> _logger;
 
-    public UsersController(IAuthService authService, ILogger<UsersController> logger)
+    public UsersController(IAuthService authService, IUserService userService, ILogger<UsersController> logger)
     {
         _authService = authService;
+        _userService = userService;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// Gets a list of all users
+    /// </summary>
+    /// <returns>List of users</returns>
+    [HttpGet]
+    [ProducesResponseType(typeof(IEnumerable<UserSummary>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<UserSummary>>> ListUsers()
+    {
+        _logger.LogInformation("GET /api/v1/users called");
+        var users = await _userService.GetAllUserSummaries();
+        return Ok(users);
     }
 
     /// <summary>
@@ -52,12 +68,20 @@ public class UsersController : ControllerBase
     /// <param name="id">User ID</param>
     /// <returns>User</returns>
     [HttpGet("{id}")]
-    [ProducesResponseType(typeof(RegisterResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UserSummary), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<RegisterResponseDto> GetUser(Guid id)
+    public async Task<ActionResult<UserSummary>> GetUser(Guid id)
     {
-        // TODO: Implement in future ticket
         _logger.LogInformation("GET /api/v1/users/{Id} called", id);
-        return NotFound(new { message = "Endpoint not yet implemented" });
+
+        try
+        {
+            var userSummary = await _userService.GetUserSummaryById(id);
+            return Ok(userSummary);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(new { message = $"User with ID {id} not found" });
+        }
     }
 }
