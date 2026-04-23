@@ -1,6 +1,7 @@
 using Lianer.Core.API.Common;
 using Lianer.Core.API.Models;
-public class UserService(UserRepository r) 
+
+public class UserService(UserRepository r) : IUserService
 {
     private readonly UserRepository _r = r;
 
@@ -8,7 +9,7 @@ public class UserService(UserRepository r)
     public async Task<Guid> Create(CreateUserRequest request, CancellationToken ct)
     {
         ValidationHelper(request);
-        
+
         var user = new User
         (
             request.FirstName,
@@ -16,34 +17,35 @@ public class UserService(UserRepository r)
             request.Email,
             HashPassword(request.Password)
         );
-        
 
-        var createdUser = await _r.Create(user, ct);
-        return createdUser.Id;
+        var created = await _r.Create(user, ct);
+        return created.Id;
     }
 
     public async Task Delete(Guid Id, CancellationToken ct)
     {
         Guard.Against.NullOrEmptyGuid(Id);
-        await _r.Delete(Id,ct);
+        await _r.Delete(Id, ct);
     }
 
-    public async Task Update(UpdateUserRequest request, CancellationToken ct)
-    {   
+    public async Task<Guid> Update(UpdateUserRequest request, CancellationToken ct)
+    {
         Guard.Against.NullOrEmptyGuid(request.Id);
         var user = await _r.GetById(request.Id) ?? throw new NotFoundException("User with id: {Id} could not be found", request.Id);
         user.UpdateProfile(request.FirstName, request.LastName, request.Email);
-        await _r.Update(user, ct);
+        var updated = await _r.Update(user, ct);
+        return updated.Id;
     }
 
     public record UpdatePasswordRequest(Guid Id, string Password);
-    public async Task UpdatePassword(UpdatePasswordRequest request, CancellationToken ct)
+    public async Task<Guid> UpdatePassword(UpdatePasswordRequest request, CancellationToken ct)
     {
         Guard.Against.NullOrEmptyGuid(request.Id);
         var user = await _r.GetById(request.Id) ?? throw new NotFoundException("User with id: {Id} could not be found", request.Id);
         var hashed = HashPassword(request.Password);
         user.UpdatePassword(hashed);
-        await _r.Update(user, ct);
+        var updated = await _r.Update(user, ct);
+        return updated.Id;
     }
     #endregion
 
@@ -60,7 +62,7 @@ public class UserService(UserRepository r)
     {
         Guard.Against.NullOrEmptyGuid(Id);
         var user = await _r.GetUserSummaryById(Id);
-        return user != null ? new UserSummary(user.Fullname, user.Email) 
+        return user != null ? new UserSummary(user.Fullname, user.Email)
         : throw new NotFoundException("User with id: {Id} could not be found or fetched", Id);
     }
     #endregion
@@ -69,7 +71,7 @@ public class UserService(UserRepository r)
     private string HashPassword(string password)
     => BCrypt.Net.BCrypt.HashPassword(password);
 
-    private void ValidationHelper(CreateUserRequest request)
+    private static void ValidationHelper(CreateUserRequest request)
     {
         Guard.Against.Null(request);
         Guard.Against.NullOrWhiteSpace(request.Email);

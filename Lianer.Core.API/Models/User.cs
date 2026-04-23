@@ -65,6 +65,7 @@ public class User
     /// </summary>
     public bool IsActive { get; set; } = true;
 
+
     protected User(){}
     public User(string firstName, string lastName, string email, string passwordHash)
     {

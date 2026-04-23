@@ -2,6 +2,13 @@ using Lianer.Core.API.Data;
 using Lianer.Core.API.Models;
 using Microsoft.EntityFrameworkCore;
 
+/// <summary>
+/// This abstract class centralises our CRUD logic.
+/// If a repository extends this class, any service can
+/// use these functions with that repository. 
+/// </summary>
+/// <typeparam name="TEntity">SQL table being used</typeparam>
+/// <param name="context">AppDbContext</param>
 public abstract class ACrud<TEntity>(AppDbContext context) : ICrud<TEntity>
 where TEntity : class
 
@@ -14,25 +21,26 @@ where TEntity : class
     {
         await _set.AddAsync(entity,ct);
         await _context.SaveChangesAsync(ct);
-        return entity;    
+        return entity;
     }
 
-    public virtual async Task Delete(Guid Id, CancellationToken ct)
+    public virtual async Task Delete(Guid id, CancellationToken ct)
     {
-        throw new NotImplementedException();
+        var entity = await _set.FindAsync([id], ct);
+        _set.Remove(entity!);
+        await _context.SaveChangesAsync(ct);
     }
 
-    public async Task<TEntity> GetById(Guid Id)
+    public virtual async Task<TEntity?> GetById(Guid id, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        return await _set.FindAsync([id], ct);
     }
 
-    public Task<TEntity> Update(TEntity entity, CancellationToken ct)
+    public virtual async Task<TEntity> Update(TEntity entity, CancellationToken ct)
     {
-        throw new NotImplementedException();
+        _set.Update(entity);
+        await _context.SaveChangesAsync(ct);
+        return entity;
     }
-
   
 }
-
-
