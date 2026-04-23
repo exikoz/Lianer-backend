@@ -65,6 +65,11 @@ public class UserService(UserRepository r) : IUserService
         var user = await _r.GetUserSummaryById(Id);
         return user ?? throw new NotFoundException("User with id: {Id} could not be found or fetched", Id);
     }
+
+    public async Task<IEnumerable<UserSummary>> GetAllUserSummaries()
+    {
+        return await _r.GetAllUserSummaries();
+    }
     #endregion
 
     #region Helpers
