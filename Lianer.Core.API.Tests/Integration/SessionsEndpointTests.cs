@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Lianer.Core.API.DTOs.Auth;
 
 namespace Lianer.Core.API.Tests.Integration;
@@ -12,19 +13,37 @@ namespace Lianer.Core.API.Tests.Integration;
 public class SessionsEndpointTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly HttpClient _client;
+    private readonly CustomWebApplicationFactory _factory;
 
     public SessionsEndpointTests(CustomWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
+        _factory = factory;
+    }
+
+    private async Task RegisterUser(string email, string password)
+    {
+        var request = new RegisterRequestDto
+        {
+            FullName = "Test User",
+            Email = email,
+            Password = password
+        };
+        var response = await _client.PostAsJsonAsync("/api/v1/users", request);
+        response.EnsureSuccessStatusCode();
     }
 
     [Fact]
     public async Task POST_Sessions_GiltigaUppgifter_Returnerar200MedToken()
     {
+        var email = $"test_{Guid.NewGuid()}@example.com";
+        var password = "Secure@Password1";
+        await RegisterUser(email, password);
+
         var request = new LoginRequestDto
         {
-            Email = "test@example.com",
-            Password = "password123"
+            Email = email,
+            Password = password
         };
 
         var response = await _client.PostAsJsonAsync("/api/v1/sessions", request);
@@ -37,7 +56,7 @@ public class SessionsEndpointTests : IClassFixture<CustomWebApplicationFactory>
         body.TokenType.Should().Be("Bearer");
         body.ExpiresIn.Should().BeGreaterThan(0);
         body.User.Should().NotBeNull();
-        body.User.Email.Should().Be("test@example.com");
+        body.User.Email.Should().Be(email);
     }
 
     [Fact]
@@ -51,10 +70,13 @@ public class SessionsEndpointTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task POST_Sessions_FelLösenord_Returnerar401()
     {
+        var email = $"wrongpass_{Guid.NewGuid()}@example.com";
+        await RegisterUser(email, "Secure@Password1");
+
         var request = new LoginRequestDto
         {
-            Email = "test@example.com",
-            Password = "helt-fel-lösenord"
+            Email = email,
+            Password = "Helt@FelLösenord1"
         };
 
         var response = await _client.PostAsJsonAsync("/api/v1/sessions", request);

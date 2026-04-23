@@ -14,13 +14,13 @@ where TEntity : class
 
 {
 
-    protected readonly AppDbContext _context = context;
+    protected readonly AppDbContext _db = context;
     protected readonly DbSet<TEntity> _set = context.Set<TEntity>();
 
     public virtual async Task<TEntity> Create(TEntity entity, CancellationToken ct)
     {
         await _set.AddAsync(entity,ct);
-        await _context.SaveChangesAsync(ct);
+        await _db.SaveChangesAsync(ct);
         return entity;
     }
 
@@ -28,7 +28,7 @@ where TEntity : class
     {
         var entity = await _set.FindAsync([id], ct);
         _set.Remove(entity!);
-        await _context.SaveChangesAsync(ct);
+        await _db.SaveChangesAsync(ct);
     }
 
     public virtual async Task<TEntity?> GetById(Guid id, CancellationToken ct = default)
@@ -39,7 +39,7 @@ where TEntity : class
     public virtual async Task<TEntity> Update(TEntity entity, CancellationToken ct)
     {
         _set.Update(entity);
-        await _context.SaveChangesAsync(ct);
+        await _db.SaveChangesAsync(ct);
         return entity;
     }
   

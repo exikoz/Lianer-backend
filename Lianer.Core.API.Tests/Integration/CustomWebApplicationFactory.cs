@@ -37,9 +37,9 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             if (descriptor != null)
                 services.Remove(descriptor);
 
-            // Lägg till en unik InMemory-databas per testinstans
+            // Använd ett fast namn för databasen så att den delas mellan anrop i samma testkörning
             services.AddDbContext<AppDbContext>(options =>
-                options.UseInMemoryDatabase($"TestDb-{Guid.NewGuid()}"));
+                options.UseInMemoryDatabase("IntegrationTestDb"));
         });
     }
 }

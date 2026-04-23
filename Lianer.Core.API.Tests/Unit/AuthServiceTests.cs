@@ -1,6 +1,8 @@
 using FluentAssertions;
+using Lianer.Core.API.Data;
 using Lianer.Core.API.DTOs.Auth;
 using Lianer.Core.API.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -14,12 +16,18 @@ public class AuthServiceTests
 {
     private readonly Mock<ILogger<AuthService>> _loggerMock;
     private readonly Mock<ITokenService> _tokenServiceMock;
+    private readonly AppDbContext _context;
     private readonly AuthService _sut;
 
     public AuthServiceTests()
     {
         _loggerMock = new Mock<ILogger<AuthService>>();
         _tokenServiceMock = new Mock<ITokenService>();
+
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        _context = new AppDbContext(options);
 
         _tokenServiceMock
             .Setup(t => t.GenerateAccessToken(It.IsAny<Models.User>()))
@@ -29,7 +37,7 @@ public class AuthServiceTests
             .Setup(t => t.GetTokenExpirationSeconds())
             .Returns(3600);
 
-        _sut = new AuthService(_loggerMock.Object, _tokenServiceMock.Object);
+        _sut = new AuthService(_context, _loggerMock.Object, _tokenServiceMock.Object);
     }
 
     [Fact]
@@ -68,6 +76,11 @@ public class AuthServiceTests
     [Fact]
     public async Task LoginAsync_GiltigtLösenord_ReturnerarToken()
     {
+        // Seed user
+        var user = new Models.User("Test", "User", "test@example.com", BCrypt.Net.BCrypt.HashPassword("password123"));
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
         var request = new LoginRequestDto
         {
             Email = "test@example.com",
@@ -86,6 +99,11 @@ public class AuthServiceTests
     [Fact]
     public async Task LoginAsync_FelaktigtLösenord_KastarUnauthorized()
     {
+        // Seed user
+        var user = new Models.User("Test", "User", "test@example.com", BCrypt.Net.BCrypt.HashPassword("password123"));
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
         var request = new LoginRequestDto
         {
             Email = "test@example.com",
@@ -137,6 +155,11 @@ public class AuthServiceTests
     [Fact]
     public async Task LoginAsync_AnroparTokenServiceEnGång()
     {
+        // Seed user
+        var user = new Models.User("Test", "User", "test@example.com", BCrypt.Net.BCrypt.HashPassword("password123"));
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
         var request = new LoginRequestDto
         {
             Email = "test@example.com",

@@ -1,3 +1,5 @@
+using Lianer.Core.API.DTOs.User;
+
 public interface IUserService
 {
     Task<Guid> Create(CreateUserRequest request, CancellationToken ct);

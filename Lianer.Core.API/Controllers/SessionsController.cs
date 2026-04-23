@@ -56,7 +56,7 @@ public class SessionsController : ControllerBase
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteSession(Guid id)
+    public IActionResult DeleteSession(Guid id)
     {
         // TODO: Implement in future ticket
         _logger.LogInformation("DELETE /api/v1/sessions/{Id} called (not implemented)", id);

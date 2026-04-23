@@ -1,1 +1,3 @@
-public record UserSummary(string Fullname, string Email);
+namespace Lianer.Core.API.DTOs.User;
+
+public record UserSummary(Guid UserId, string FullName, string Email);
