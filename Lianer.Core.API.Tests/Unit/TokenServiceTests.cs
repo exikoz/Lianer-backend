@@ -38,7 +38,7 @@ public class TokenServiceTests
     [Fact]
     public void GenerateAccessToken_ReturnerarGiltigJwtSträng()
     {
-        var user = new User("Test", "Testsson", "test@example.com", "hash");
+        var user = new User("Test Testsson", "test@example.com", "hash");
 
         var token = _sut.GenerateAccessToken(user);
 
@@ -49,7 +49,7 @@ public class TokenServiceTests
     [Fact]
     public void GenerateAccessToken_InnehållerKorrektaClaims()
     {
-        var user = new User("Anna", "Svensson", "anna@example.com", "hash");
+        var user = new User("Anna Svensson", "anna@example.com", "hash");
 
         var token = _sut.GenerateAccessToken(user);
 
@@ -73,7 +73,7 @@ public class TokenServiceTests
     [Fact]
     public void GenerateAccessToken_TokenHarKorrektUtgångstid()
     {
-        var user = new User("Test", "Testsson", "test@example.com", "hash");
+        var user = new User("Test Testsson", "test@example.com", "hash");
 
         var token = _sut.GenerateAccessToken(user);
 

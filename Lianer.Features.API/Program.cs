@@ -1,3 +1,5 @@
+using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.OpenApi;
 using Azure.Identity;
 using Lianer.Features.API.Clients;
 using Lianer.Features.API.Services;
@@ -26,6 +28,9 @@ namespace Lianer.Features.API
             {
                 builder.Configuration.AddAzureKeyVault(new Uri(vaultUri), new DefaultAzureCredential());
             }
+
+            // --- Caching Support (K-128) ---
+            builder.Services.AddMemoryCache();
 
             // --- Database Setup ---
             builder.Services.AddDbContext<FeaturesDbContext>(options =>
@@ -98,6 +103,38 @@ namespace Lianer.Features.API
 
             builder.Services.AddScoped<IHunterService, HunterService>();
 
+            // --- Configure JWT Authentication ---
+            var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+            var secretKey = jwtSettings["SecretKey"];
+
+            // Fallback for development if secret key is missing in Key Vault/Secrets
+            if (string.IsNullOrEmpty(secretKey))
+            {
+                if (builder.Environment.IsProduction())
+                {
+                    throw new InvalidOperationException("JWT SecretKey MUST be configured in Production!");
+                }
+                secretKey = "LianerBackendSharedDevelopmentSecretKey2026!!";
+            }
+
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = jwtSettings["Issuer"] ?? "http://localhost:5297",
+                        ValidAudience = jwtSettings["Audience"] ?? "http://localhost:5297",
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+                        ClockSkew = TimeSpan.Zero
+                    };
+                });
+
+            builder.Services.AddAuthorization();
+
             builder.Services.AddControllers();
 
             // --- API Versioning ---
@@ -112,7 +149,35 @@ namespace Lianer.Features.API
             });
 
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            builder.Services.AddOpenApi();
+            builder.Services.AddOpenApi(options =>
+            {
+                options.AddDocumentTransformer((document, context, cancellationToken) =>
+                {
+                    document.Components ??= new();
+                    
+                    var bearerScheme = new OpenApiSecurityScheme
+                    {
+                        Type = SecuritySchemeType.Http,
+                        Scheme = "bearer",
+                        BearerFormat = "JWT",
+                        Description = "JWT Authorization header using the Bearer scheme. Enter your token in the text input below."
+                    };
+                    document.Components.SecuritySchemes.Add("BearerAuth", bearerScheme);
+
+                    document.SecurityRequirements.Add(new OpenApiSecurityRequirement
+                    {
+                        {
+                            new OpenApiSecurityScheme
+                            {
+                                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "BearerAuth" }
+                            },
+                            new List<string>()
+                        }
+                    });
+
+                    return Task.CompletedTask;
+                });
+            });
 
             var app = builder.Build();
 
@@ -132,6 +197,7 @@ namespace Lianer.Features.API
 
             app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
 

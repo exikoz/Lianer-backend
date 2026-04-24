@@ -2,6 +2,7 @@ using System.Text;
 using System.Threading.RateLimiting;
 using Asp.Versioning;
 using Azure.Identity;
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Lianer.Core.API.Data;
 using Lianer.Core.API.Filters;
 using Lianer.Core.API.Middleware;
@@ -10,6 +11,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 
 namespace Lianer.Core.API
@@ -25,6 +27,7 @@ namespace Lianer.Core.API
             if (!string.IsNullOrEmpty(vaultUri))
             {
                 builder.Configuration.AddAzureKeyVault(new Uri(vaultUri), new DefaultAzureCredential());
+                Console.WriteLine("Core API: Key Vault connection initialized to: " + vaultUri);
             }
 
             // ── Services ──────────────────────────────────────────────
@@ -43,6 +46,9 @@ namespace Lianer.Core.API
             // Database (EF Core InMemory)
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseInMemoryDatabase("LianerDb"));
+
+            // --- Caching Support (K-128) ---
+            builder.Services.AddMemoryCache();
 
             // Register application services (DI)
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -71,7 +77,7 @@ if (string.IsNullOrEmpty(secretKey))
         throw new InvalidOperationException("JWT SecretKey MUST be configured in Production!");
     }
     // Fallback för Development/Testing
-    secretKey = "DevelopmentSecretKeyMinstTrettioTvåTeckenLång!!"; 
+    secretKey = "LianerBackendSharedDevelopmentSecretKey2026!!"; 
 }
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -83,8 +89,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSettings["Issuer"] ?? "LianerIssuer",
-            ValidAudience = jwtSettings["Audience"] ?? "LianerAudience",
+            ValidIssuer = jwtSettings["Issuer"] ?? "http://localhost:5297",
+            ValidAudience = jwtSettings["Audience"] ?? "http://localhost:5297",
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
             ClockSkew = TimeSpan.Zero
         };
@@ -120,8 +126,68 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 });
             });
 
-            // OpenAPI
-            builder.Services.AddOpenApi();
+            // OpenAPI with Google OAuth2 security scheme
+            builder.Services.AddOpenApi(options =>
+            {
+                options.AddDocumentTransformer((document, context, ct) =>
+                {
+                    var oauthScheme = new OpenApiSecurityScheme
+                    {
+                        Type = SecuritySchemeType.OAuth2,
+                        Flows = new OpenApiOAuthFlows
+                        {
+                            AuthorizationCode = new OpenApiOAuthFlow
+                            {
+                                AuthorizationUrl = new Uri("https://accounts.google.com/o/oauth2/v2/auth"),
+                                TokenUrl = new Uri("https://oauth2.googleapis.com/token"),
+                                Scopes = new Dictionary<string, string>
+                                {
+                                    { "openid", "OpenID information" },
+                                    { "email", "Email address" },
+                                    { "profile", "Profile information" }
+                                }
+                            }
+                        }
+                    };
+
+                    document.Components ??= new();
+                    document.Components.SecuritySchemes.Add("GoogleAuth", oauthScheme);
+
+                    // Add Bearer Token (JWT) Scheme
+                    var bearerScheme = new OpenApiSecurityScheme
+                    {
+                        Type = SecuritySchemeType.Http,
+                        Scheme = "bearer",
+                        BearerFormat = "JWT",
+                        Description = "JWT Authorization header using the Bearer scheme. Enter your token in the text input below."
+                    };
+                    document.Components.SecuritySchemes.Add("BearerAuth", bearerScheme);
+
+                    // Add global security requirements (BearerAuth is first for default selection in Scalar)
+                    document.SecurityRequirements.Add(new OpenApiSecurityRequirement
+                    {
+                        {
+                            new OpenApiSecurityScheme
+                            {
+                                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "BearerAuth" }
+                            },
+                            new List<string>()
+                        }
+                    });
+                    document.SecurityRequirements.Add(new OpenApiSecurityRequirement
+                    {
+                        {
+                            new OpenApiSecurityScheme
+                            {
+                                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "GoogleAuth" }
+                            },
+                            new List<string>()
+                        }
+                    });
+
+                    return Task.CompletedTask;
+                });
+            });
 
             // API versioning (Asp.Versioning)
             builder.Services.AddApiVersioning(options =>
@@ -176,7 +242,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();
-                app.MapScalarApiReference();
+                app.MapScalarApiReference(options =>
+                {
+                    // Denna metod ersätter den föråldrade OAuth2Options
+                    // Vi skickar med namnet "GoogleAuth" som matchar vår DocumentTransformer
+                    options.AddAuthorizationCodeFlow("GoogleAuth", auth =>
+                    {
+                        auth.ClientId = builder.Configuration["Google:Auth:ClientId"];
+                        auth.SelectedScopes = ["openid", "email", "profile"];
+                    });
+                });
             }
 
             app.MapControllers()

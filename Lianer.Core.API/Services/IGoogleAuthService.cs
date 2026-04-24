@@ -13,4 +13,10 @@ public interface IGoogleAuthService
     /// <param name="accessToken">Google OAuth2 access token</param>
     /// <returns>Google user information if token is valid</returns>
     Task<GoogleUserInfoDto?> ValidateGoogleTokenAsync(string accessToken);
+
+    /// <summary>
+    /// Generates the Google OAuth2 authorization URL for the client to redirect to
+    /// </summary>
+    /// <returns>The complete Google authorization URL</returns>
+    string GetGoogleLoginUrl();
 }

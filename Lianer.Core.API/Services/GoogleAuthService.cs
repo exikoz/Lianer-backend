@@ -11,11 +11,34 @@ public class GoogleAuthService : IGoogleAuthService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<GoogleAuthService> _logger;
+    private readonly IConfiguration _configuration;
 
-    public GoogleAuthService(IHttpClientFactory httpClientFactory, ILogger<GoogleAuthService> logger)
+    public GoogleAuthService(IHttpClientFactory httpClientFactory, ILogger<GoogleAuthService> logger, IConfiguration configuration)
     {
         _httpClient = httpClientFactory.CreateClient("GoogleAuth");
         _logger = logger;
+        _configuration = configuration;
+    }
+
+    /// <summary>
+    /// Generates the Google OAuth2 authorization URL for the client to redirect to
+    /// </summary>
+    /// <returns>The complete Google authorization URL</returns>
+    public string GetGoogleLoginUrl()
+    {
+        var clientId = _configuration["Google:Auth:ClientId"];
+        var redirectUri = _configuration["Google:Auth:RedirectUri"];
+        var baseUrl = "https://accounts.google.com/o/oauth2/v2/auth";
+
+        var url = $"{baseUrl}?" +
+                  $"client_id={clientId}&" +
+                  $"redirect_uri={Uri.EscapeDataString(redirectUri ?? string.Empty)}&" +
+                  "response_type=code&" +
+                  "scope=openid%20email%20profile&" +
+                  "access_type=offline&" +
+                  "include_granted_scopes=true";
+
+        return url;
     }
 
     /// <summary>

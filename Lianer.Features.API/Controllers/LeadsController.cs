@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using Asp.Versioning;
 using Lianer.Features.API.Clients;
 using Lianer.Features.API.Data;
@@ -18,9 +19,15 @@ namespace Lianer.Features.API.Controllers;
 [Route("api/v{version:apiVersion}/[controller]")]
 [Produces("application/json")]
 [ApiController]
-public class LeadsController(IHunterService hunterService, CoreApiClient coreApiClient, FeaturesDbContext dbContext, ILogger<LeadsController> logger) : ControllerBase
+public class LeadsController(
+    IHunterService hunterService, 
+    CoreApiClient coreApiClient, 
+    FeaturesDbContext dbContext, 
+    IMemoryCache cache,
+    ILogger<LeadsController> logger) : ControllerBase
 {
     private readonly ILogger<LeadsController> _logger = logger;
+    private const string LeadsCacheKey = "enriched_leads_list";
 
     /// <summary>
     /// Gets all leads currently in the features database, enriched with assigned user names from Core API.
@@ -29,7 +36,15 @@ public class LeadsController(IHunterService hunterService, CoreApiClient coreApi
     [HttpGet]
     public async Task<IActionResult> GetAllLeads()
     {
-        _logger.LogInformation("GET /api/v1/leads called to list all leads (Enriched)");
+        _logger.LogInformation("GET /api/v1/leads called (Cache Check)");
+
+        if (cache.TryGetValue(LeadsCacheKey, out object? cachedLeads))
+        {
+            _logger.LogInformation("Returning leads from cache.");
+            return Ok(cachedLeads);
+        }
+
+        _logger.LogInformation("Cache miss. Fetching fresh data and enriching.");
 
         // 1. Fetch all leads from local DB
         var leads = await dbContext.Contacts.ToListAsync();
@@ -62,7 +77,14 @@ public class LeadsController(IHunterService hunterService, CoreApiClient coreApi
             AssignedToName = l.AssignedTo.HasValue && userMap.TryGetValue(l.AssignedTo.Value, out var name) 
                 ? name 
                 : (l.AssignedTo.HasValue ? "User not found" : "Unassigned")
-        });
+        }).ToList();
+
+        // 5. Store in cache for 5 minutes
+        var cacheOptions = new MemoryCacheEntryOptions()
+            .SetAbsoluteExpiration(TimeSpan.FromMinutes(5))
+            .SetSlidingExpiration(TimeSpan.FromMinutes(2));
+
+        cache.Set(LeadsCacheKey, enrichedLeads, cacheOptions);
 
         return Ok(enrichedLeads);
     }
@@ -72,6 +94,7 @@ public class LeadsController(IHunterService hunterService, CoreApiClient coreApi
     /// Dynamically links the latest lead with a live user from Core API.
     /// </summary>
     [HttpPost("prepare-test")]
+    [Authorize]
     public async Task<IActionResult> PrepareTest()
     {
         _logger.LogInformation("POST /api/v1/leads/prepare-test called (Bulk Mode)");
@@ -103,7 +126,10 @@ public class LeadsController(IHunterService hunterService, CoreApiClient coreApi
             
             await dbContext.SaveChangesAsync();
 
-            _logger.LogInformation("Linked {Count} leads to user {UserId}", allLeads.Count, targetUser.UserId);
+            // Invalidate cache
+            cache.Remove(LeadsCacheKey);
+
+            _logger.LogInformation("Linked {Count} leads to user {UserId} and invalidated cache", allLeads.Count, targetUser.UserId);
 
             return Ok(new
             {
@@ -121,31 +147,43 @@ public class LeadsController(IHunterService hunterService, CoreApiClient coreApi
     }
 
     /// <summary>
+    /// Request model for assigning a lead to a user.
+    /// </summary>
+    public class AssignLeadRequest
+    {
+        public Guid UserId { get; set; }
+    }
+
+    /// <summary>
     /// Manually assigns a specific lead to a user.
     /// </summary>
-    /// <param name="id">The lead ID</param>
-    /// <param name="userId">The user ID from Core API</param>
-    [HttpPatch("{id}/assign")]
-    public async Task<IActionResult> AssignLead(Guid id, [FromBody] Guid userId)
+    /// <param name="leadId">The ID of the lead to assign</param>
+    /// <param name="request">The assignment request containing the target User ID</param>
+    [HttpPatch("{leadId}/assign")]
+    [Authorize]
+    public async Task<IActionResult> AssignLead([FromRoute] Guid leadId, [FromBody] AssignLeadRequest request)
     {
-        _logger.LogInformation("PATCH /api/v1/leads/{Id}/assign called with User {UserId}", id, userId);
+        _logger.LogInformation("PATCH /api/v1/leads/{LeadId}/assign called with User {UserId}", leadId, request.UserId);
 
         // 1. Find the lead
-        var lead = await dbContext.Contacts.FindAsync(id);
+        var lead = await dbContext.Contacts.FindAsync(leadId);
         if (lead == null) return NotFound("Lead not found.");
 
         // 2. Optional: Verify user exists in Core API (Integration Check)
         try
         {
-            var user = await coreApiClient.GetUserSummaryAsync(userId);
+            var user = await coreApiClient.GetUserSummaryAsync(request.UserId);
             if (user == null) return BadRequest("The specified User ID was not found in Core API.");
             
             // 3. Update and Save
-            lead.AssignedTo = userId;
+            lead.AssignedTo = request.UserId;
             await dbContext.SaveChangesAsync();
 
+            // Invalidate cache
+            cache.Remove(LeadsCacheKey);
+
             return Ok(new { 
-                Message = $"Lead [{lead.FirstName} {lead.LastName}] has been manually assigned to [{user.FullName}]",
+                Message = $"Lead [{lead.FirstName} {lead.LastName}] has been manually assigned to [{user.FullName}] (Cache invalidated)",
                 LeadId = lead.Id,
                 AssignedToName = user.FullName
             });
@@ -250,6 +288,7 @@ public class LeadsController(IHunterService hunterService, CoreApiClient coreApi
     /// <response code="200">Successfully completed the import process</response>
     /// <response code="404">No data found for the domain</response>
     [HttpPost("import/{domain}")]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> BulkImport(string domain)
@@ -298,6 +337,9 @@ public class LeadsController(IHunterService hunterService, CoreApiClient coreApi
             {
                 await dbContext.Contacts.AddRangeAsync(newContacts);
                 await dbContext.SaveChangesAsync();
+                
+                // Invalidate cache
+                cache.Remove(LeadsCacheKey);
             }
 
             return Ok(new

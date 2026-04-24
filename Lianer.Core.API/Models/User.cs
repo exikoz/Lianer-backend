@@ -17,12 +17,9 @@ public class User
     /// User's full name
     /// </summary>
     [Required]
-    [MaxLength(50)]
-    public string FirstName { get; set; } = string.Empty;
-    [Required]
-    [MaxLength(50)]
-    public string LastName { get; set; } = string.Empty;
-    public string FullName => $"{FirstName} {LastName}";
+    [MaxLength(100)]
+    public string FullName { get; set; } = string.Empty;
+
     /// <summary>
     /// User's email address (unique)
     /// </summary>
@@ -67,11 +64,10 @@ public class User
 
 
     protected User(){}
-    public User(string firstName, string lastName, string email, string passwordHash)
+    public User(string fullName, string email, string passwordHash)
     {
         Id = Guid.NewGuid();
-        FirstName = firstName;
-        LastName = lastName;
+        FullName = fullName;
         PasswordHash = passwordHash;
         Email = email;
         CreatedAt = DateTime.UtcNow;
@@ -79,10 +75,9 @@ public class User
         Provider = "Local";
     }
 
-    public void UpdateProfile(string? firstName, string? lastName, string? email)
+    public void UpdateProfile(string? fullName, string? email)
     {
-        if (!string.IsNullOrWhiteSpace(firstName)) FirstName = firstName;
-        if (!string.IsNullOrWhiteSpace(lastName)) LastName = lastName;
+        if (!string.IsNullOrWhiteSpace(fullName)) FullName = fullName;
         if (!string.IsNullOrWhiteSpace(email)) Email = email;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -91,13 +86,12 @@ public class User
         PasswordHash = newHash;
         UpdatedAt = DateTime.UtcNow;
     }
-    public static User CreateExternal(string firstName, string lastName, string email, string provider, string externalId)
+    public static User CreateExternal(string fullName, string email, string provider, string externalId)
     {
         return new User
         {
             Id = Guid.NewGuid(),
-            FirstName = firstName,
-            LastName = lastName,
+            FullName = fullName,
             Email = email,
             Provider = provider,
             ExternalProviderId = externalId,

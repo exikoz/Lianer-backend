@@ -36,6 +36,7 @@ public class ExceptionMiddleware
         {
             ArgumentException => (HttpStatusCode.BadRequest, "Bad Request"),
             KeyNotFoundException => (HttpStatusCode.NotFound, "Not Found"),
+            NotFoundException => (HttpStatusCode.NotFound, "Not Found"),
             UnauthorizedAccessException => (HttpStatusCode.Unauthorized, "Unauthorized"),
             InvalidOperationException => (HttpStatusCode.Conflict, "Conflict"),
             _ => (HttpStatusCode.InternalServerError, "Internal Server Error")
