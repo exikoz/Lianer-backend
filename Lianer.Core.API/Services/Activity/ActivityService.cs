@@ -56,6 +56,14 @@ public class ActivityService(IActivityRepository repo) : IActivityService
         Guard.Against.NegativeOrZero(pageSize);
         return await _repo.GetActivitiesByUser(userId, currentPage, pageSize, ct);
     }
+
+    public async Task<Activity?> GetActivityById
+    (Guid id, CancellationToken ct)
+    {
+        Guard.Against.NullOrEmptyGuid(id);
+        return await _repo.GetById(id,ct);
+    }   
+
     #endregion
     private static void ValidationHelper(CreateActivityRecord request)
     {
