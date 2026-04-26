@@ -1,8 +1,8 @@
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
 
 jobs:
   build_and_test:
@@ -12,11 +12,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-   #   - name: Setup .NET
-   #     uses: actions/setup-dotnet@v4
-  #      with:
-   #       dotnet-version: 9.0.x
-   #       cache: true
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
 
       - name: Restore dependencies
         run: dotnet restore
@@ -24,5 +23,5 @@ jobs:
       - name: Build
         run: dotnet build --configuration Release --no-restore
 
-     # - name: Run tests
-     #   run: dotnet test --configuration Release --no-build --verbosity normal
+      - name: Run tests
+        run: dotnet test --configuration Release --no-build --verbosity normal
