@@ -22,13 +22,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 
             entity.HasIndex(x => x.Email).IsUnique();
 
-            entity.Property(x => x.FirstName)
+            entity.Property(x => x.FullName)
                 .IsRequired()
-                .HasMaxLength(50);
-
-            entity.Property(x => x.LastName)
-                .IsRequired()
-                .HasMaxLength(50);
+                .HasMaxLength(100);
 
             entity.Property(x => x.Email)
                 .IsRequired()

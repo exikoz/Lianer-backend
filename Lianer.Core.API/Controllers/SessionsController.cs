@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Lianer.Core.API.DTOs.Auth;
 using Lianer.Core.API.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Lianer.Core.API.Controllers;
 
@@ -16,15 +17,18 @@ public class SessionsController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly IGoogleAuthService _googleAuthService;
+    private readonly IMemoryCache _cache;
     private readonly ILogger<SessionsController> _logger;
 
     public SessionsController(
         IAuthService authService, 
         IGoogleAuthService googleAuthService,
+        IMemoryCache cache,
         ILogger<SessionsController> logger)
     {
         _authService = authService;
         _googleAuthService = googleAuthService;
+        _cache = cache;
         _logger = logger;
     }
 
@@ -95,6 +99,9 @@ public class SessionsController : ControllerBase
             // Authenticate or auto-register user
             var response = await _authService.GoogleLoginAsync(googleUser);
 
+            // Invalidate users list cache as auto-registration might have occurred
+            _cache.Remove("users_list");
+
             return Ok(response);
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("temporarily unavailable"))
@@ -108,4 +115,18 @@ public class SessionsController : ControllerBase
             return StatusCode(500, new { message = "Internal server error during Google authentication" });
         }
     }
-}
+
+    /// <summary>
+    /// Gets the Google OAuth2 authorization URL to start the login flow
+    /// </summary>
+    /// <returns>A JSON object containing the authorization URL</returns>
+    /// <response code="200">Returns the Google authorization URL</response>
+    [HttpGet("google/url")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public IActionResult GetGoogleUrl()
+    {
+        _logger.LogInformation("GET /api/v1/sessions/google/url called");
+        var url = _googleAuthService.GetGoogleLoginUrl();
+        return Ok(new { url });
+    }
+}

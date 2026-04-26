@@ -77,7 +77,7 @@ public class AuthServiceTests
     public async Task LoginAsync_GiltigtLösenord_ReturnerarToken()
     {
         // Seed user
-        var user = new Models.User("Test", "User", "test@example.com", BCrypt.Net.BCrypt.HashPassword("password123"));
+        var user = new Models.User("Test User", "test@example.com", BCrypt.Net.BCrypt.HashPassword("password123"));
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
@@ -100,7 +100,7 @@ public class AuthServiceTests
     public async Task LoginAsync_FelaktigtLösenord_KastarUnauthorized()
     {
         // Seed user
-        var user = new Models.User("Test", "User", "test@example.com", BCrypt.Net.BCrypt.HashPassword("password123"));
+        var user = new Models.User("Test User", "test@example.com", BCrypt.Net.BCrypt.HashPassword("password123"));
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
@@ -156,7 +156,7 @@ public class AuthServiceTests
     public async Task LoginAsync_AnroparTokenServiceEnGång()
     {
         // Seed user
-        var user = new Models.User("Test", "User", "test@example.com", BCrypt.Net.BCrypt.HashPassword("password123"));
+        var user = new Models.User("Test User", "test@example.com", BCrypt.Net.BCrypt.HashPassword("password123"));
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 

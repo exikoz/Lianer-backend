@@ -16,7 +16,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Development");
+        builder.UseEnvironment("Testing");
 
         builder.ConfigureAppConfiguration((context, config) =>
         {
@@ -25,7 +25,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                 { "JwtSettings:SecretKey", "IntegrationTestSecretKeyMinstTrettioTvåTecken!!" },
                 { "JwtSettings:Issuer", "TestIssuer" },
                 { "JwtSettings:Audience", "TestAudience" },
-                { "JwtSettings:ExpirationMinutes", "30" }
+                { "JwtSettings:ExpirationMinutes", "30" },
+                { "AzureKeyVault:VaultUri", "" }
             });
         });
 

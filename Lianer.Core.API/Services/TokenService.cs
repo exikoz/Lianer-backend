@@ -26,9 +26,9 @@ public class TokenService : ITokenService
     public string GenerateAccessToken(User user)
     {
         var jwtSettings = _configuration.GetSection("JwtSettings");
-        var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
-        var issuer = jwtSettings["Issuer"] ?? throw new InvalidOperationException("JWT Issuer not configured");
-        var audience = jwtSettings["Audience"] ?? throw new InvalidOperationException("JWT Audience not configured");
+        var secretKey = jwtSettings["SecretKey"] ?? "LianerBackendSharedDevelopmentSecretKey2026!!";
+        var issuer = jwtSettings["Issuer"] ?? "http://localhost:5297";
+        var audience = jwtSettings["Audience"] ?? "http://localhost:5297";
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

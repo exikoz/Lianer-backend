@@ -26,23 +26,23 @@ public class AuthService : IAuthService
     /// </summary>
     public async Task<RegisterResponseDto> RegisterAsync(RegisterRequestDto request)
     {
-        _logger.LogInformation("Attempting to create user with email: {Email}", request.Email);
+        // Normalize email
+        var email = request.Email.ToLowerInvariant();
 
         // Check if email already exists
-        var emailExists = await _context.Users.AnyAsync(u => u.Email == request.Email);
+        var emailExists = await _context.Users.AnyAsync(u => u.Email == email);
         if (emailExists)
         {
+            _logger.LogWarning("Registration failed: Email {Email} already exists", email);
             throw new InvalidOperationException("Email address is already registered");
         }
 
         // Hash password with BCrypt
         string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
-        var nameParts = (request.FullName ?? "").Split(' ', 2);
         var user = new User(
-            nameParts[0],
-            nameParts.Length > 1 ? nameParts[1] : string.Empty,
-            request.Email,
+            request.FullName,
+            request.Email.ToLowerInvariant(),
             passwordHash
         );
 
@@ -66,20 +66,24 @@ public class AuthService : IAuthService
     /// </summary>
     public async Task<LoginResponseDto> LoginAsync(LoginRequestDto request)
     {
-        _logger.LogInformation("Attempting to authenticate user with email: {Email}", request.Email);
+        // Normalize email
+        var email = request.Email.ToLowerInvariant();
 
         // Retrieve user from database
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         if (user == null)
         {
+            _logger.LogWarning("Login failed: User not found with email {Email}", email);
             throw new UnauthorizedAccessException("Invalid email or password");
         }
+
+        _logger.LogInformation("User found for login: {UserId}, checking password...", user.Id);
 
         // Verify password
         bool isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
         if (!isPasswordValid)
         {
-            _logger.LogWarning("Failed login attempt for email: {Email}", request.Email);
+            _logger.LogWarning("Login failed: Invalid password for email {Email}", email);
             throw new UnauthorizedAccessException("Invalid email or password");
         }
 
@@ -110,20 +114,18 @@ public class AuthService : IAuthService
     {
         _logger.LogInformation("Processing Google SSO login for email: {Email}", googleUser.Email);
 
-        // Check if user exists by email and external provider
+        var emailNormalized = googleUser.Email.ToLowerInvariant();
         var user = await _context.Users
-            .FirstOrDefaultAsync(u => u.Email == googleUser.Email && u.Provider == "Google");
+            .FirstOrDefaultAsync(u => u.Email == emailNormalized && u.Provider == "Google");
 
         if (user == null)
         {
             // Auto-register new user if they don't exist
             _logger.LogInformation("Auto-registering new Google user: {Email}", googleUser.Email);
             
-            var nameParts = (googleUser.Name ?? "").Split(' ', 2);
             user = User.CreateExternal(
-                nameParts[0],
-                nameParts.Length > 1 ? nameParts[1] : string.Empty,
-                googleUser.Email,
+                googleUser.Name,
+                emailNormalized,
                 "Google",
                 googleUser.Id
             );
