@@ -4,6 +4,7 @@ public class ActivityService(IActivityRepository repo) : IActivityService
 {
     private readonly IActivityRepository _repo = repo;
 
+
     #region Write operations (update, create and delete)
     public async Task<Guid> Create(CreateActivityRecord request, CancellationToken ct)
     {
@@ -39,23 +40,27 @@ public class ActivityService(IActivityRepository repo) : IActivityService
     #endregion
 
     #region Read functions (paged, get by id etc)
-    public async Task<IReadOnlyList<Activity>> GetLatestUpdatedActivities
-    (int currentPage, int pageSize, CancellationToken ct)
-    {
-        Guard.Against.NegativeOrZero(currentPage);
-        Guard.Against.NegativeOrZero(pageSize);
-        return await _repo.GetLastUpdatedActivities(currentPage, pageSize, ct);
-    }
 
 
-    public async Task<IReadOnlyList<Activity>> GetLatestActivitiesByUserId
-    (Guid userId, int currentPage, int pageSize, CancellationToken ct)
+    public async Task<ActivitySummary?> GetActivityById
+    (Guid id, CancellationToken ct)
     {
-        Guard.Against.NullOrEmptyGuid(userId);
-        Guard.Against.NegativeOrZero(currentPage);
-        Guard.Against.NegativeOrZero(pageSize);
-        return await _repo.GetActivitiesByUser(userId, currentPage, pageSize, ct);
-    }
+        Guard.Against.NullOrEmptyGuid(id);
+        var response =  await _repo.GetById(id,ct);
+        
+        return new ActivitySummary
+        (
+            response.Id, 
+            response.Description ?? "",
+            response.AssignedTo ?? null,
+            response.CreatedBy,
+            response.CreatedAt, 
+            response.UpdatedAt,
+            response.Status
+        );
+
+    }   
+
     #endregion
     private static void ValidationHelper(CreateActivityRecord request)
     {
