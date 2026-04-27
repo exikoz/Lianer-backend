@@ -21,9 +21,11 @@ public class NoteController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<NoteSummary>>> List(
         Guid activityId,
+        int currentPage,
+        int pageSize,
         CancellationToken ct)
     {
-        var notes = await _queries.GetByActivityId(activityId, ct);
+        var notes = await _queries.GetByActivityId(activityId,currentPage,pageSize, ct);
         return Ok(notes);
     }
 
