@@ -6,10 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Lianer.Core.API.Controllers;
 
 
-//TODO : SKA FIXA DENNA /Alexander
 
-
-/*
 /// <summary>
 /// Manages CRM contact resources.
 /// </summary>
@@ -117,11 +114,11 @@ public class ContactsController : ControllerBase
     /// <response code="200">Contact updated successfully.</response>
     /// <response code="400">Validation failed or duplicate name.</response>
     /// <response code="404">Contact not found.</response>
-    [HttpPut("{id:int}")]
+    [HttpPut("{id:Guid}")]
     [ProducesResponseType(typeof(ContactResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult<ContactResponse> Update(int id, [FromBody] UpdateContactRequest request)
+    public ActionResult<ContactResponse> Update(Guid id, [FromBody] UpdateContactRequest request)
     {
         var contact = _contacts.FirstOrDefault(c => c.Id == id);
         if (contact is null)
@@ -165,10 +162,10 @@ public class ContactsController : ControllerBase
     /// <param name="id">The contact ID.</param>
     /// <response code="204">Contact deleted successfully.</response>
     /// <response code="404">Contact not found.</response>
-    [HttpDelete("{id:int}")]
+    [HttpDelete("{id:Guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult Delete(int id)
+    public IActionResult Delete(Guid id)
     {
         var contact = _contacts.FirstOrDefault(c => c.Id == id);
         if (contact is null)
@@ -207,4 +204,3 @@ public class ContactsController : ControllerBase
         }).ToList()
     };
 }
-*/
