@@ -57,6 +57,20 @@ namespace Lianer.Core.API
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<UserRepository>();
 
+            // Activity services & repository
+            builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
+            builder.Services.AddScoped<IActivityService, ActivityService>();
+            builder.Services.AddScoped<IActivityQueryService, ActivityQueryService>();
+
+            // Note services & repository
+            builder.Services.AddScoped<INoteRepository, NoteRepository>();
+            builder.Services.AddScoped<INoteService, NoteService>();
+            builder.Services.AddScoped<INoteQueryService, NoteQueryService>();
+
+            // Contact service & repository
+            builder.Services.AddScoped<IContactRepository, ContactRepository>();
+            builder.Services.AddScoped<ContactService>();
+
             // Configure HTTP clients with Polly resilience patterns
             builder.Services.AddHttpClient("GoogleAuth", client =>
             {
