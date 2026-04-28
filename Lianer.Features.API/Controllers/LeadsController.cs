@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Primitives;
 using Asp.Versioning;
 using Lianer.Features.API.Clients;
 using Lianer.Features.API.Data;
@@ -27,29 +28,89 @@ public class LeadsController(
     ILogger<LeadsController> logger) : ControllerBase
 {
     private readonly ILogger<LeadsController> _logger = logger;
-    private const string LeadsCacheKey = "enriched_leads_list";
+    private const string LeadsCacheKeyPrefix = "enriched_leads_list";
+    private static CancellationTokenSource _cacheResetToken = new();
+
+    /// <summary>
+    /// Invalidates all cached lead queries by cancelling the shared token.
+    /// </summary>
+    private static void InvalidateLeadsCache()
+    {
+        var oldToken = Interlocked.Exchange(ref _cacheResetToken, new CancellationTokenSource());
+        oldToken.Cancel();
+        oldToken.Dispose();
+    }
 
     /// <summary>
     /// Gets all leads currently in the features database, enriched with assigned user names from Core API.
+    /// Supports pagination, sorting and search filtering.
     /// </summary>
-    /// <returns>A list of enriched leads</returns>
+    /// <param name="page">Page number (default: 1)</param>
+    /// <param name="pageSize">Items per page (default: 20, max: 100)</param>
+    /// <param name="search">Optional search term to filter by name, email or organization</param>
+    /// <param name="sortBy">Sort field: name, email, organization, created (default: created)</param>
+    /// <param name="sortOrder">Sort direction: asc or desc (default: desc)</param>
+    /// <returns>A paginated list of enriched leads</returns>
     [HttpGet]
-    public async Task<IActionResult> GetAllLeads()
+    public async Task<IActionResult> GetAllLeads(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? search = null,
+        [FromQuery] string sortBy = "created",
+        [FromQuery] string sortOrder = "desc")
     {
-        _logger.LogInformation("GET /api/v1/leads called (Cache Check)");
+        _logger.LogInformation("GET /api/v1/leads called (page={Page}, pageSize={PageSize}, search={Search}, sortBy={SortBy})", 
+            page, pageSize, search, sortBy);
 
-        if (cache.TryGetValue(LeadsCacheKey, out object? cachedLeads))
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+        if (pageSize > 100) pageSize = 100;
+
+        // Build cache key based on query parameters
+        var cacheKey = $"{LeadsCacheKeyPrefix}_p{page}_s{pageSize}_{search}_{sortBy}_{sortOrder}";
+
+        if (cache.TryGetValue(cacheKey, out object? cachedResult))
         {
             _logger.LogInformation("Returning leads from cache.");
-            return Ok(cachedLeads);
+            return Ok(cachedResult);
         }
 
         _logger.LogInformation("Cache miss. Fetching fresh data and enriching.");
 
-        // 1. Fetch all leads from local DB
-        var leads = await dbContext.Contacts.ToListAsync();
+        // 1. Build query with filtering
+        IQueryable<Contact> query = dbContext.Contacts;
 
-        // 2. Fetch all users from Core API for mapping
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.ToLower();
+            query = query.Where(c =>
+                c.FirstName.ToLower().Contains(term) ||
+                c.LastName.ToLower().Contains(term) ||
+                c.Email.ToLower().Contains(term) ||
+                c.Organization.ToLower().Contains(term));
+        }
+
+        // 2. Sorting
+        query = sortBy.ToLower() switch
+        {
+            "name" => sortOrder == "asc" 
+                ? query.OrderBy(c => c.FirstName).ThenBy(c => c.LastName) 
+                : query.OrderByDescending(c => c.FirstName).ThenByDescending(c => c.LastName),
+            "email" => sortOrder == "asc" ? query.OrderBy(c => c.Email) : query.OrderByDescending(c => c.Email),
+            "organization" => sortOrder == "asc" ? query.OrderBy(c => c.Organization) : query.OrderByDescending(c => c.Organization),
+            _ => sortOrder == "asc" ? query.OrderBy(c => c.CreatedAt) : query.OrderByDescending(c => c.CreatedAt)
+        };
+
+        // 3. Get total count for pagination metadata
+        var totalCount = await query.CountAsync();
+
+        // 4. Apply pagination
+        var leads = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        // 5. Fetch all users from Core API for mapping
         IEnumerable<CoreUserSummaryDto> users = [];
         try
         {
@@ -60,10 +121,10 @@ public class LeadsController(
             _logger.LogWarning(ex, "Could not fetch users from Core API for enrichment. Listing leads without names.");
         }
 
-        // 3. Create a lookup dictionary for performance
+        // 6. Create a lookup dictionary for performance
         var userMap = users.ToDictionary(u => u.UserId, u => u.FullName);
 
-        // 4. Map to enriched result
+        // 7. Map to enriched result
         var enrichedLeads = leads.Select(l => new
         {
             l.Id,
@@ -79,14 +140,24 @@ public class LeadsController(
                 : (l.AssignedTo.HasValue ? "User not found" : "Unassigned")
         }).ToList();
 
-        // 5. Store in cache for 5 minutes
+        var result = new
+        {
+            Data = enrichedLeads,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+        };
+
+        // 8. Store in cache with eviction token
         var cacheOptions = new MemoryCacheEntryOptions()
             .SetAbsoluteExpiration(TimeSpan.FromMinutes(5))
-            .SetSlidingExpiration(TimeSpan.FromMinutes(2));
+            .SetSlidingExpiration(TimeSpan.FromMinutes(2))
+            .AddExpirationToken(new CancellationChangeToken(_cacheResetToken.Token));
 
-        cache.Set(LeadsCacheKey, enrichedLeads, cacheOptions);
+        cache.Set(cacheKey, result, cacheOptions);
 
-        return Ok(enrichedLeads);
+        return Ok(result);
     }
 
     /// <summary>
@@ -127,7 +198,7 @@ public class LeadsController(
             await dbContext.SaveChangesAsync();
 
             // Invalidate cache
-            cache.Remove(LeadsCacheKey);
+            InvalidateLeadsCache();
 
             _logger.LogInformation("Linked {Count} leads to user {UserId} and invalidated cache", allLeads.Count, targetUser.UserId);
 
@@ -180,7 +251,7 @@ public class LeadsController(
             await dbContext.SaveChangesAsync();
 
             // Invalidate cache
-            cache.Remove(LeadsCacheKey);
+            InvalidateLeadsCache();
 
             return Ok(new { 
                 Message = $"Lead [{lead.FirstName} {lead.LastName}] has been manually assigned to [{user.FullName}] (Cache invalidated)",
@@ -339,7 +410,7 @@ public class LeadsController(
                 await dbContext.SaveChangesAsync();
                 
                 // Invalidate cache
-                cache.Remove(LeadsCacheKey);
+                InvalidateLeadsCache();
             }
 
             return Ok(new

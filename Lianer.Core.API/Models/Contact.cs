@@ -57,7 +57,6 @@ public class Contact
     }
 
     public void Update(
-        Guid id,
         string firstName,
         string lastName,
         string role,

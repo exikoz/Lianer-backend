@@ -49,10 +49,8 @@ public record UpdateContactRequest
     public ContactSocialDto? Social { get; set; }
 
     /// <summary>
-    /// Contact status. Must be one of: Ej kontaktad, Pågående, Klar, Förlorad, Återkom.
+    /// Contact status.
     /// </summary>
-    [RegularExpression(@"^(Ej kontaktad|Pågående|Klar|Förlorad|Återkom)$",
-        ErrorMessage = "Status must be one of: Ej kontaktad, Pågående, Klar, Förlorad, Återkom.")]
     public ContactStatus Status { get; set; }
 
     /// <summary>

@@ -1,18 +1,22 @@
+using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.OpenApi;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
 using Azure.Identity;
-using Lianer.Features.API.Clients;
-using Lianer.Features.API.Services;
 using Asp.Versioning;
 using Scalar.AspNetCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using Lianer.Features.API.Data;
-using Microsoft.EntityFrameworkCore;
 using Polly;
 using Polly.Retry;
 using Polly.CircuitBreaker;
+using Lianer.Features.API.Clients;
+using Lianer.Features.API.Data;
+using Lianer.Features.API.Filters;
+using Lianer.Features.API.Middleware;
+using Lianer.Features.API.Services;
 
 namespace Lianer.Features.API
 {
@@ -135,7 +139,39 @@ namespace Lianer.Features.API
 
             builder.Services.AddAuthorization();
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers(options =>
+            {
+                // Register custom validation filter globally
+                options.Filters.Add<ValidateModelFilter>();
+            });
+
+            // --- CORS — strict policy, no AllowAnyOrigin ---
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("DefaultPolicy", policy =>
+                {
+                    policy.WithOrigins(
+                            builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+                            ?? ["http://localhost:5173", "http://localhost:3000"])
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
+            });
+
+            // --- Rate Limiting — Fixed Window ---
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+                options.AddFixedWindowLimiter("fixed", limiterOptions =>
+                {
+                    limiterOptions.PermitLimit = 100;
+                    limiterOptions.Window = TimeSpan.FromMinutes(1);
+                    limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    limiterOptions.QueueLimit = 10;
+                });
+            });
 
             // --- API Versioning ---
             builder.Services.AddApiVersioning(options =>
@@ -179,6 +215,13 @@ namespace Lianer.Features.API
                 });
             });
 
+            // Validate DI on build to catch missing registrations early
+            builder.Host.UseDefaultServiceProvider(options =>
+            {
+                options.ValidateScopes = true;
+                options.ValidateOnBuild = true;
+            });
+
             var app = builder.Build();
 
             // --- Ensure Database is Created ---
@@ -195,13 +238,28 @@ namespace Lianer.Features.API
                 app.MapScalarApiReference();
             }
 
+            // ── Middleware pipeline (correct order) ───────────────────
+            // 1. Exception handling (outermost — catches everything)
+            app.UseMiddleware<ExceptionMiddleware>();
+
+            // 2. HTTPS redirection
             app.UseHttpsRedirection();
 
+            // 3. CORS
+            app.UseCors("DefaultPolicy");
+
+            // 4. Rate limiting
+            app.UseRateLimiter();
+
+            // 5. Routing
+            app.UseRouting();
+
+            // 6. Authentication & Authorization
             app.UseAuthentication();
             app.UseAuthorization();
 
-
-            app.MapControllers();
+            app.MapControllers()
+                .RequireRateLimiting("fixed");
 
             app.Run();
         }
