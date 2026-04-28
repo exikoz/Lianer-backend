@@ -60,7 +60,7 @@ public class CreateContactRequest
     /// Person assigned to this contact. Max 200 characters.
     /// </summary>
     [StringLength(200, ErrorMessage = "AssignedTo cannot exceed 200 characters.")]
-    public string? AssignedTo { get; set; }
+    public Guid? AssignedTo { get; set; }
 
     /// <summary>
     /// Whether this contact is marked as a favorite.
