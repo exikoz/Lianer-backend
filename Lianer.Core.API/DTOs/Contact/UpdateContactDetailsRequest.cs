@@ -1,5 +1,6 @@
 using Lianer.Core.API.Models;
 
+// Lämnade för senare refactoring ifall tid finns /Alexander
 public record UpdateContactDetailRequest(Guid Id, string FirstName, string LastName, string Role,  List<string> Phone, List<string> Email, ContactSocial Social);
 public record UpdateContactAssignedTo(Guid Id, Guid AssignedTo);
 public record UpdateContactFavorite(Guid Id, bool IsFavorite);
