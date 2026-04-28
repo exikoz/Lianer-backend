@@ -16,19 +16,28 @@ using Scalar.AspNetCore;
 
 namespace Lianer.Core.API
 {
+    // $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+    // $                                                                             $
+    // $   █████  ██      ███████ ██   ██  █████  ███    ██ ██████  ███████ ██████   $
+    // $  ██   ██ ██      ██       ██ ██  ██   ██ ████   ██ ██   ██ ██      ██   ██  $
+    // $  ███████ ██      █████     ███   ███████ ██ ██  ██ ██   ██ █████   ██████   $
+    // $  ██   ██ ██      ██       ██ ██  ██   ██ ██  ██ ██ ██   ██ ██      ██   ██  $
+    // $  ██   ██ ███████ ███████ ██   ██ ██   ██ ██   ████ ██████  ███████ ██   ██  $
+    // $                                                                             $
+    // $   JANSSON® --------------------------------------------------------------   $
+    // $                                                                             $
+    // $                                                         $
+    // $   UPDATED: 2026-04-28                                                       $
+    // $                                                                             $
+    // $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+    
     public class Program
     {
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // --- Azure Key Vault (Always active) ---
-            var vaultUri = builder.Configuration["AzureKeyVault:VaultUri"];
-            if (!string.IsNullOrEmpty(vaultUri))
-            {
-                builder.Configuration.AddAzureKeyVault(new Uri(vaultUri), new DefaultAzureCredential());
-                Console.WriteLine("Core API: Key Vault connection initialized to: " + vaultUri);
-            }
+
 
             // ── Services ──────────────────────────────────────────────
 
@@ -50,12 +59,8 @@ namespace Lianer.Core.API
             // --- Caching Support (K-128) ---
             builder.Services.AddMemoryCache();
 
-            // Register application services (DI)
-            builder.Services.AddScoped<IAuthService, AuthService>();
-            builder.Services.AddScoped<ITokenService, TokenService>();
-            builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
-            builder.Services.AddScoped<IUserService, UserService>();
-            builder.Services.AddScoped<UserRepository>();
+            // Services + Repo
+            builder.Services.AddApplicationServices();
 
             // Configure HTTP clients with Polly resilience patterns
             builder.Services.AddHttpClient("GoogleAuth", client =>
@@ -65,18 +70,16 @@ namespace Lianer.Core.API
                 client.DefaultRequestHeaders.Add("User-Agent", "Lianer-Backend/1.0");
             });
 
-            // --- Configure JWT Authentication ---
+// --- Configure JWT Authentication ---
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"];
 
-// Förhindra krasch vid tester/utveckling om nyckeln saknas
 if (string.IsNullOrEmpty(secretKey))
 {
     if (builder.Environment.IsProduction())
     {
         throw new InvalidOperationException("JWT SecretKey MUST be configured in Production!");
     }
-    // Fallback för Development/Testing
     secretKey = "LianerBackendSharedDevelopmentSecretKey2026!!"; 
 }
 
@@ -238,6 +241,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             app.UseAuthentication();
             app.UseAuthorization();
 
+
+            if(app.Environment.IsProduction())
+            {
+                            // --- Azure Key Vault (Always active) ---
+            var vaultUri = builder.Configuration["AzureKeyVault:VaultUri"];
+            if (!string.IsNullOrEmpty(vaultUri))
+            {
+                builder.Configuration.AddAzureKeyVault(new Uri(vaultUri), new DefaultAzureCredential());
+                Console.WriteLine("Core API: Key Vault connection initialized to: " + vaultUri);
+            }
+            }
             // 7. OpenAPI / Scalar (dev only)
             if (app.Environment.IsDevelopment())
             {
@@ -252,6 +266,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         auth.SelectedScopes = ["openid", "email", "profile"];
                     });
                 });
+                
             }
 
             app.MapControllers()

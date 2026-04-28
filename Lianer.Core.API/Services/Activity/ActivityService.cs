@@ -22,11 +22,22 @@ public class ActivityService(IActivityRepository repo) : IActivityService
         return created.Id;
     }
 
-    public async Task<Guid> Update(UpdateActivityRecord request, CancellationToken ct)
+    public async Task<Guid> Update(Guid id, UpdateActivityRecord request, CancellationToken ct)
     {
         Guard.Against.Null(request);
-        var activity = await _repo.GetById(request.Id, ct) ?? throw new NotFoundException("Activity with id: {Id} could not be found", request.Id);
-        activity.UpdateActivity(request.Description, request.AssignedTo, request.StartDate, request.EndDate, request.Status);
+        Guard.Against.NullOrEmptyGuid(id);
+
+        var activity = await _repo.GetById(id, ct)
+            ?? throw new NotFoundException("Activity with id: {Id} could not be found", id);
+
+        activity.UpdateActivity(
+            request.Description ?? activity.Description,
+            request.AssignedTo ?? activity.AssignedTo,
+            request.StartDate ?? activity.StartDate,
+            request.EndDate ?? activity.EndDate,
+            request.Status ?? activity.Status
+        );
+
         var updated = await _repo.Update(activity, ct);
         return updated.Id;
     }

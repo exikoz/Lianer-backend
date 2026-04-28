@@ -34,6 +34,7 @@ public class ActivityController : ControllerBase
     /// <param name="id">User id.</param>
     /// <param name="currentPage">Page number.</param>
     /// <param name="pageSize">Items per page.</param>
+    /// <param name="ct"></param>
     /// <returns>A paginated list of activities.</returns>
     [HttpGet("user/{id:guid}")]
     [ProducesResponseType(typeof(IReadOnlyList<ActivitySummary>), StatusCodes.Status200OK)]
@@ -59,6 +60,7 @@ public class ActivityController : ControllerBase
     /// Gets a specific activity by id.
     /// </summary>
     /// <param name="id">Activity id.</param>
+    /// <param name="ct"></param>
     /// <returns>The requested activity.</returns>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(ActivitySummary), StatusCodes.Status200OK)]
@@ -78,6 +80,7 @@ public class ActivityController : ControllerBase
     /// Creates a new activity.
     /// </summary>
     /// <param name="request">Activity creation data.</param>
+    /// <param name="ct"></param>
     /// <returns>The created activity.</returns>
     [HttpPost]
     [ProducesResponseType(typeof(ActivitySummary), StatusCodes.Status201Created)]
@@ -106,20 +109,23 @@ public class ActivityController : ControllerBase
     /// Updates an existing activity.
     /// </summary>
     /// <param name="request">Updated activity data.</param>
+    /// <param name="id"></param>
+    /// <param name="ct"></param>
     /// <returns>The updated activity.</returns>
-    [HttpPut]
+    [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(ActivitySummary), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ActivitySummary>> UpdateActivity(
         [FromBody] UpdateActivityRecord request,
+        Guid id,
         CancellationToken ct)
     {
         _logger.LogInformation("PUT {BaseRoute} called", BaseRoute);
 
-        var id = await _service.Update(request, ct);
+        var response = await _service.Update(id, request,ct);
 
-        var updated = await _queries.GetActivitySummaryById(id, ct);
+        var updated = await _queries.GetActivitySummaryById(response, ct);
 
         return Ok(updated);
     }

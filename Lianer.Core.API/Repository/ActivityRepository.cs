@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 public class ActivityRepository(AppDbContext context) : ACrud<Activity>(context),  IActivityRepository
 {
-    protected readonly AppDbContext _c = context;
 
 
 

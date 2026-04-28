@@ -52,14 +52,11 @@ public class CreateContactRequest
     /// Contact status. Must be one of: Ej kontaktad, Pågående, Klar, Förlorad, Återkom.
     /// </summary>
    // [RegularExpression(@"^(Ej kontaktad|Pågående|Klar|Förlorad|Återkom)$",
-   [RegularExpression(@"^(InteKontaktad|Pågående|Klar|Förlorad|Återkom)$",
-        ErrorMessage = "Status must be one of: Ej kontaktad, Pågående, Klar, Förlorad, Återkom.")]
     public ContactStatus Status { get; set; } = ContactStatus.EjKontaktad;
 
     /// <summary>
     /// Person assigned to this contact. Max 200 characters.
     /// </summary>
-    [StringLength(200, ErrorMessage = "AssignedTo cannot exceed 200 characters.")]
     public Guid? AssignedTo { get; set; }
 
     /// <summary>

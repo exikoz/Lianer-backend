@@ -41,7 +41,8 @@ public class AuthService : IAuthService
         string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
         var user = new User(
-            request.FullName,
+            request.FirstName,
+            request.LastName,
             request.Email.ToLowerInvariant(),
             passwordHash
         );

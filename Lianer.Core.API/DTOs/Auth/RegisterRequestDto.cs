@@ -10,10 +10,15 @@ public class RegisterRequestDto
     /// <summary>
     /// User's full name
     /// </summary>
-    [Required(ErrorMessage = "Full name is required")]
-    [StringLength(100, MinimumLength = 2, ErrorMessage = "Full name must be between 2 and 100 characters")]
-    public string FullName { get; set; } = string.Empty;
-
+    [Required(ErrorMessage = "First name is required")]
+    [StringLength(50, MinimumLength = 2, ErrorMessage = "First name must be between 2 and 100 characters")]
+    public string FirstName { get; set; } = string.Empty;
+    /// <summary>
+    /// User's full name
+    /// </summary>
+    [Required(ErrorMessage = "Last name is required")]
+    [StringLength(50, MinimumLength = 2, ErrorMessage = "Last name must be between 2 and 100 characters")]
+    public string LastName { get; set; } = string.Empty;
     /// <summary>
     /// User's email address
     /// </summary>

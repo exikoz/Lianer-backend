@@ -2,7 +2,8 @@ using System.ComponentModel.DataAnnotations;
 
 public record CreateUserRequest
 {
-    [Required] public string FullName { get; init; } = default!;
-    [Required, EmailAddress] public string Email { get; init; } = default!;
-    [Required, MinLength(8)] public string Password { get; init; } = default!;
+    [Required] public required string FirstName;
+    [Required] public required string LastName;
+    [Required, EmailAddress] public required string Email;
+    [Required, MinLength(8)] public required string Password;
 }
