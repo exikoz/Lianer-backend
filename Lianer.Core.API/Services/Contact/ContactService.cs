@@ -2,7 +2,15 @@ using Lianer.Core.API.Common;
 using Lianer.Core.API.DTOs;
 using Lianer.Core.API.Models;
 
-public class ContactService(IContactRepository repo)
+public interface IContactService
+{
+    Task<Guid> Create(CreateContactRequest request, CancellationToken ct);
+    Task Delete(Guid id, CancellationToken ct);
+    Task<ContactResponse?> GetContactById(Guid id, CancellationToken ct);
+    Task<Guid> Update(UpdateContactRequest request, CancellationToken ct);
+}
+
+public class ContactService(IContactRepository repo) : IContactService
 {
     private readonly IContactRepository _repo = repo;
 

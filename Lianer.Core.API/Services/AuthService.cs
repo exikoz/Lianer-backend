@@ -20,7 +20,7 @@ public class AuthService : IAuthService
         _logger = logger;
         _tokenService = tokenService;
     }
-
+/*
     /// <summary>
     /// Creates a new user (POST /api/v1/users)
     /// </summary>
@@ -41,7 +41,8 @@ public class AuthService : IAuthService
         string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
         var user = new User(
-            request.FullName,
+            request.FirstName,
+            request.LastName,
             request.Email.ToLowerInvariant(),
             passwordHash
         );
@@ -60,7 +61,7 @@ public class AuthService : IAuthService
             CreatedAt = user.CreatedAt
         };
     }
-
+*/
     /// <summary>
     /// Authenticates a user and creates a session (POST /api/v1/sessions)
     /// </summary>

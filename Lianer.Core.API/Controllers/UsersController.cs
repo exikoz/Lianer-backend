@@ -44,7 +44,7 @@ public class UsersController : ControllerBase
     /// <returns>List of users</returns>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<UserSummary>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<UserSummary>>> ListUsers()
+    public async Task<ActionResult<IEnumerable<UserSummary>>> ListUsers(CancellationToken ct)
     {
         _logger.LogInformation("GET /api/v1/users called (Cache Check)");
 
@@ -55,7 +55,7 @@ public class UsersController : ControllerBase
         }
 
         _logger.LogInformation("Cache miss. Fetching users from service.");
-        var users = await _userService.GetAllUserSummaries();
+        var users = await _userService.GetAllUserSummaries(ct);
 
         var cacheOptions = new MemoryCacheEntryOptions()
             .SetAbsoluteExpiration(TimeSpan.FromMinutes(10))
@@ -74,20 +74,20 @@ public class UsersController : ControllerBase
     /// <response code="201">User created successfully</response>
     /// <response code="400">Invalid input or email already registered</response>
     [HttpPost]
-    [ProducesResponseType(typeof(RegisterResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<RegisterResponseDto>> CreateUser([FromBody] RegisterRequestDto request)
+    public async Task<ActionResult<Guid>> CreateUser([FromBody] CreateUserRequest request,CancellationToken ct)
     {
         _logger.LogInformation("POST /api/v1/users called");
 
-        var response = await _authService.RegisterAsync(request);
+        var response = await _userService.Create(request,ct);
         
         // Invalidate list cache
         _cache.Remove(UsersListCacheKey);
 
         return CreatedAtAction(
             nameof(GetUser),
-            new { version = "1.0", id = response.UserId },
+            new { version = "1.0", id = response },
             response
         );
     }
@@ -96,11 +96,12 @@ public class UsersController : ControllerBase
     /// Gets a specific user
     /// </summary>
     /// <param name="id">User ID</param>
+    /// <param name="ct"></param>
     /// <returns>User details</returns>
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(UserSummary), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<UserSummary>> GetUser(Guid id)
+    public async Task<ActionResult<UserSummary>> GetUser(Guid id, CancellationToken ct)
     {
         _logger.LogInformation("GET /api/v1/users/{Id} called (Cache Check)", id);
 
@@ -115,7 +116,7 @@ public class UsersController : ControllerBase
 
         try
         {
-            var userSummary = await _userService.GetUserSummaryById(id);
+            var userSummary = await _userService.GetUserSummaryById(id,ct);
 
             var cacheOptions = new MemoryCacheEntryOptions()
                 .SetAbsoluteExpiration(TimeSpan.FromMinutes(10));
@@ -144,7 +145,7 @@ public class UsersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request)
+    public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request, CancellationToken ct)
     {
         _logger.LogInformation("PUT /api/v1/users/{Id} called", id);
 
@@ -153,7 +154,7 @@ public class UsersController : ControllerBase
             return BadRequest(new { message = "ID in URL does not match ID in body" });
         }
 
-        await _userService.Update(request, default);
+        await _userService.Update(request,  ct);
 
         // Invalidate caches
         _cache.Remove(UsersListCacheKey);
@@ -175,7 +176,7 @@ public class UsersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteUser(Guid id)
+    public async Task<IActionResult> DeleteUser(Guid id, CancellationToken ct)
     {
         _logger.LogInformation("DELETE /api/v1/users/{Id} called", id);
 
@@ -187,7 +188,7 @@ public class UsersController : ControllerBase
             return Forbid();
         }
 
-        await _userService.Delete(id, default);
+        await _userService.Delete(id, ct);
 
         // Invalidate caches
         _cache.Remove(UsersListCacheKey);

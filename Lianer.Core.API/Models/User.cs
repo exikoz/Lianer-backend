@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Lianer.Core.API.Models;
 
@@ -17,9 +18,14 @@ public class User
     /// User's full name
     /// </summary>
     [Required]
-    [MaxLength(100)]
-    public string FullName { get; set; } = string.Empty;
+    [MaxLength(50)]
+    public string FirstName { get; set; } = string.Empty;
+    [Required]
+    [MaxLength(50)]
+    public string LastName { get; set; } = string.Empty;
 
+    [NotMapped]
+    public string FullName => $"{FirstName} {LastName}".Trim();    
     /// <summary>
     /// User's email address (unique)
     /// </summary>
@@ -64,10 +70,11 @@ public class User
 
 
     protected User(){}
-    public User(string fullName, string email, string passwordHash)
+    public User(string fName, string lName, string email, string passwordHash)
     {
         Id = Guid.NewGuid();
-        FullName = fullName;
+        FirstName = fName;
+        LastName = lName;
         PasswordHash = passwordHash;
         Email = email;
         CreatedAt = DateTime.UtcNow;
@@ -75,9 +82,10 @@ public class User
         Provider = "Local";
     }
 
-    public void UpdateProfile(string? fullName, string? email)
+    public void UpdateProfile(string? fName, string? lName, string? email)
     {
-        if (!string.IsNullOrWhiteSpace(fullName)) FullName = fullName;
+        if (!string.IsNullOrWhiteSpace(fName)) FirstName = fName;
+        if (!string.IsNullOrWhiteSpace(lName)) LastName = lName;
         if (!string.IsNullOrWhiteSpace(email)) Email = email;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -86,12 +94,13 @@ public class User
         PasswordHash = newHash;
         UpdatedAt = DateTime.UtcNow;
     }
-    public static User CreateExternal(string fullName, string email, string provider, string externalId)
+    public static User CreateExternal(string fName, string email, string provider, string externalId)
     {
         return new User
         {
             Id = Guid.NewGuid(),
-            FullName = fullName,
+            FirstName = fName,
+            LastName =  "external", //TODO temporary fix
             Email = email,
             Provider = provider,
             ExternalProviderId = externalId,

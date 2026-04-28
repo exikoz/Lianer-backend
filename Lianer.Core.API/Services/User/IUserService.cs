@@ -26,20 +26,20 @@ public interface IUserService
     /// </summary>
     /// <param name="Id">The unique identifier of the user.</param>
     /// <returns>The user details.</returns>
-    Task<UserDetails> GetUserById(Guid Id);
+    Task<UserDetails> GetUserById(Guid Id, CancellationToken ct);
 
     /// <summary>
     /// Retrieves a basic summary of a specific user.
     /// </summary>
     /// <param name="Id">The unique identifier of the user.</param>
     /// <returns>The user summary.</returns>
-    Task<UserSummary> GetUserSummaryById(Guid Id);
+    Task<UserSummary> GetUserSummaryById(Guid Id, CancellationToken ct);
 
     /// <summary>
     /// Retrieves summaries for all registered users.
     /// </summary>
     /// <returns>A collection of user summaries.</returns>
-    Task<IEnumerable<UserSummary>> GetAllUserSummaries();
+    Task<IEnumerable<UserSummary>> GetAllUserSummaries(  CancellationToken ct);
 
     /// <summary>
     /// Updates an existing user's profile information.
@@ -55,6 +55,6 @@ public interface IUserService
     /// <param name="request">The password update details.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The unique identifier of the user.</returns>
-    Task<Guid> UpdatePassword(UserService.UpdatePasswordRequest request, CancellationToken ct);
+    Task<Guid> UpdatePassword(UpdatePasswordRequest request, CancellationToken ct);
 }
 
