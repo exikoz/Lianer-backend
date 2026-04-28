@@ -45,7 +45,6 @@ public class ContactService(IContactRepository repo)
             ?? throw new NotFoundException("Contact with id: {Id} could not be found", request.Id);
 
         contact.Update(
-            request.Id,
             request.FirstName,
             request.LastName,
             request.Role,
