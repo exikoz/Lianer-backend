@@ -8,8 +8,15 @@ public static class KeyVaultExtensions
             var vaultUri = builder.Configuration["AzureKeyVault:VaultUri"];
             if (!string.IsNullOrEmpty(vaultUri))
             {
-                builder.Configuration.AddAzureKeyVault(new Uri(vaultUri), new DefaultAzureCredential());
-                Console.WriteLine("Core API: Key Vault connection initialized to: " + vaultUri);
+                try
+                {
+                    builder.Configuration.AddAzureKeyVault(new Uri(vaultUri), new DefaultAzureCredential());
+                    Console.WriteLine("Core API: Key Vault connection initialized to: " + vaultUri);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Core API: Key Vault connection failed. Falling back to local secrets. (Error: {ex.Message})");
+                }
             }
             return builder;
     }
