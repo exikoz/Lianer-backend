@@ -2,14 +2,6 @@ using Lianer.Core.API.Common;
 using Lianer.Core.API.DTOs;
 using Lianer.Core.API.Models;
 
-public interface IContactService
-{
-    Task<Guid> Create(CreateContactRequest request, CancellationToken ct);
-    Task Delete(Guid id, CancellationToken ct);
-    Task<ContactResponse?> GetContactById(Guid id, CancellationToken ct);
-    Task<Guid> Update(UpdateContactRequest request, CancellationToken ct);
-}
-
 public class ContactService(IContactRepository repo) : IContactService
 {
     private readonly IContactRepository _repo = repo;
@@ -45,20 +37,20 @@ public class ContactService(IContactRepository repo) : IContactService
         return created.Id;
     }
 
-    public async Task<Guid> Update(UpdateContactRequest request, CancellationToken ct)
+    public async Task<Guid> Update(Guid id, UpdateContactRequest request, CancellationToken ct)
     {
         Guard.Against.Null(request);
 
-        var contact = await _repo.GetById(request.Id, ct)
-            ?? throw new NotFoundException("Contact with id: {Id} could not be found", request.Id);
+        var contact = await _repo.GetById(id, ct)
+            ?? throw new NotFoundException("Contact with id: {Id} could not be found", id);
 
         contact.Update(
-            request.FirstName,
-            request.LastName,
-            request.Role,
-            request.Company,
-            request.Phone,
-            request.Email,
+            request.FirstName ?? contact.FirstName,
+            request.LastName ?? contact.LastName,
+            request.Role ?? contact.Role,
+            request.Company ?? contact.Company,
+            request.Phone ?? contact.Phone,
+            request.Email ?? contact.Email,
             request.Social is null
                 ? null
                 : new ContactSocial
@@ -66,11 +58,11 @@ public class ContactService(IContactRepository repo) : IContactService
                     LinkedIn = request.Social.LinkedIn,
                     Website = request.Social.Website
                 },
-            request.Status,
-            request.AssignedTo,
-            request.IsFavorite,
-            request.CompletedAt,
-            request.LastContactDate
+            request.Status ?? contact.Status,
+            request.AssignedTo ?? contact.AssignedTo,
+            request.IsFavorite ?? contact.IsFavorite,
+            request.CompletedAt ?? contact.CompletedAt,
+            request.LastContactDate ?? contact.LastContactDate
         );
 
         var updated = await _repo.Update(contact, ct);

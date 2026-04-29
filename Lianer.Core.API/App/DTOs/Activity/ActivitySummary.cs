@@ -14,7 +14,7 @@ public sealed record ActivitySummary(
     public static Expression<Func<Activity, ActivitySummary>> Selector => 
     a => new ActivitySummary(
         a.Id,
-        a.Description,
+        a.Description ?? "No content",
         a.AssignedTo,
         a.CreatedBy,
         a.CreatedAt,

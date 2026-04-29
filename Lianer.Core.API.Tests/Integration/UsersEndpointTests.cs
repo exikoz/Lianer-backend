@@ -23,7 +23,8 @@ public class UsersEndpointTests : IClassFixture<CustomWebApplicationFactory>
     {
         var request = new RegisterRequestDto
         {
-            FullName = "Test Testsson",
+            FirstName = "Test",
+            LastName= "Testsson",
             Email = "test@example.com",
             Password = "Secure@Password1"
         };

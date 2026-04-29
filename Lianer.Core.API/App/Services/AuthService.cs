@@ -20,7 +20,7 @@ public class AuthService : IAuthService
         _logger = logger;
         _tokenService = tokenService;
     }
-/*
+    
     /// <summary>
     /// Creates a new user (POST /api/v1/users)
     /// </summary>
@@ -61,7 +61,7 @@ public class AuthService : IAuthService
             CreatedAt = user.CreatedAt
         };
     }
-*/
+
     /// <summary>
     /// Authenticates a user and creates a session (POST /api/v1/sessions)
     /// </summary>
@@ -81,7 +81,7 @@ public class AuthService : IAuthService
         _logger.LogInformation("User found for login: {UserId}, checking password...", user.Id);
 
         // Verify password
-        bool isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
+        bool isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash,true);
         if (!isPasswordValid)
         {
             _logger.LogWarning("Login failed: Invalid password for email {Email}", email);

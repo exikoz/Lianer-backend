@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using Lianer.Core.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lianer.Core.API.Controllers;
@@ -7,6 +8,7 @@ namespace Lianer.Core.API.Controllers;
 /// <summary>
 /// Controller for activity management.
 /// </summary>
+[Authorize]
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/activities")]
@@ -44,7 +46,7 @@ public class ActivityController : ControllerBase
         [FromQuery] int pageSize,
         CancellationToken ct)
     {
-        _logger.LogInformation("GET {BaseRoute}/user/{UserId} called", BaseRoute, id);
+        _logger.LogInformation("GET {BaseRoute}/user/{id} called", BaseRoute, id);
 
         var activities = await _queries.GetLatestActivitiesByUserId(
             id,

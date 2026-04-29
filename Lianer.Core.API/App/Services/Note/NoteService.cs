@@ -43,8 +43,8 @@ public sealed class NoteService(INoteRepository repo) : INoteService
         if (note.ActivityId != activityId)
             throw new NotFoundException("Note not found for activity.");
 
-        note.Title = request.Title;
-        note.Content = request.Content;
+        note.Title = request.Title ?? note.Title;
+        note.Content = request.Content ?? note.Content;
 
         var updated = await _repo.Update(note, ct);
 

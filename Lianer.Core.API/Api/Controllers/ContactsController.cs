@@ -1,19 +1,21 @@
 using Asp.Versioning;
 using Lianer.Core.API.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lianer.Core.API.Controllers;
 
+[Authorize]
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/contacts")]
 [Produces("application/json")]
 public class ContactsController : ControllerBase
 {
-    private readonly ContactService _service;
+    private readonly IContactService _service;
     private readonly ILogger<ContactsController> _logger;
 
-    public ContactsController(ContactService service, ILogger<ContactsController> logger)
+    public ContactsController(IContactService service, ILogger<ContactsController> logger)
     {
         _service = service;
         _logger = logger;
@@ -65,10 +67,8 @@ public class ContactsController : ControllerBase
     {
         _logger.LogInformation("PUT update contact {Id}", id);
 
-        if (id != request.Id)
-            return BadRequest("Route id and body id must match.");
 
-        var updatedId = await _service.Update(request, ct);
+        var updatedId = await _service.Update(id, request, ct);
 
         return Ok(updatedId);
     }

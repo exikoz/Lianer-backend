@@ -1,5 +1,4 @@
 public sealed record UpdateNoteRecord(
-    Guid Id,
-    string Title,
-    string Content
+    string? Title,
+    string? Content
 );

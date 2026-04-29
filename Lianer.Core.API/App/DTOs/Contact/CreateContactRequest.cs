@@ -6,7 +6,7 @@ namespace Lianer.Core.API.DTOs;
 /// <summary>
 /// Request body for creating a new contact.
 /// </summary>
-public class CreateContactRequest
+public record CreateContactRequest
 {
     /// <summary>
     /// Contact name. Required, max 200 characters.
@@ -53,10 +53,6 @@ public class CreateContactRequest
     /// </summary>
     public ContactStatus Status { get; set; } = ContactStatus.EjKontaktad;
 
-    /// <summary>
-    /// Person assigned to this contact. Max 200 characters.
-    /// </summary>
-    [StringLength(200, ErrorMessage = "AssignedTo cannot exceed 200 characters.")]
     public Guid? AssignedTo { get; set; }
 
     /// <summary>

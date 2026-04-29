@@ -1,5 +1,5 @@
+using Lianer.Core.API.App.DTOs.User;
 using Lianer.Core.API.DTOs.User;
-using Lianer.Core.API.Services;
 
 /// <summary>
 /// Service interface for user-related operations.

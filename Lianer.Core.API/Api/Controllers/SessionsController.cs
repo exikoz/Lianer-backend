@@ -129,4 +129,4 @@ public class SessionsController : ControllerBase
         var url = _googleAuthService.GetGoogleLoginUrl();
         return Ok(new { url });
     }
-}
+}

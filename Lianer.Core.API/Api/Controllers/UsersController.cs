@@ -1,13 +1,13 @@
 using Microsoft.Extensions.Caching.Memory;
 using Asp.Versioning;
-using Lianer.Core.API.DTOs.Auth;
 using Lianer.Core.API.DTOs.User;
 using Lianer.Core.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Lianer.Core.API.App.DTOs.User;
 
-namespace Lianer.Core.API.Controllers;
+namespace Lianer.Core.API.Api.Controllers;
 
 /// <summary>
 /// Controller for user management (RESTful resource: users)
@@ -18,7 +18,6 @@ namespace Lianer.Core.API.Controllers;
 [Produces("application/json")]
 public class UsersController : ControllerBase
 {
-    private readonly IAuthService _authService;
     private readonly IUserService _userService;
     private readonly IMemoryCache _cache;
     private readonly ILogger<UsersController> _logger;
@@ -32,7 +31,6 @@ public class UsersController : ControllerBase
         IMemoryCache cache,
         ILogger<UsersController> logger)
     {
-        _authService = authService;
         _userService = userService;
         _cache = cache;
         _logger = logger;

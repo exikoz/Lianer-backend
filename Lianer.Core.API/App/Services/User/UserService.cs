@@ -1,6 +1,7 @@
 using Lianer.Core.API.Common;
 using Lianer.Core.API.Models;   
 using Lianer.Core.API.DTOs.User;
+using Lianer.Core.API.App.DTOs.User;
 
 public class UserService(IUserRepository r) : IUserService
 {
