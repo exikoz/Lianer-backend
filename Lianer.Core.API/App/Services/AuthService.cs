@@ -20,7 +20,7 @@ public class AuthService : IAuthService
         _logger = logger;
         _tokenService = tokenService;
     }
-    
+
     /// <summary>
     /// Creates a new user (POST /api/v1/users)
     /// </summary>
@@ -56,7 +56,8 @@ public class AuthService : IAuthService
         return new RegisterResponseDto
         {
             UserId = user.Id,
-            FullName = user.FullName,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
             Email = user.Email,
             CreatedAt = user.CreatedAt
         };
@@ -102,7 +103,8 @@ public class AuthService : IAuthService
             User = new UserInfoDto
             {
                 UserId = user.Id,
-                FullName = user.FullName,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
                 Email = user.Email
             }
         };
@@ -153,7 +155,8 @@ public class AuthService : IAuthService
             User = new UserInfoDto
             {
                 UserId = user.Id,
-                FullName = user.FullName,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
                 Email = user.Email
             }
         };
