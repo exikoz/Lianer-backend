@@ -45,7 +45,8 @@ public class AuthServiceTests
     {
         var request = new RegisterRequestDto
         {
-            FullName = "Test Testsson",
+            FirstName = "Test",
+            LastName = "Testsson",
             Email = "test@example.com",
             Password = "SecurePassword123!"
         };
@@ -54,7 +55,8 @@ public class AuthServiceTests
 
         result.Should().NotBeNull();
         result.Email.Should().Be("test@example.com");
-        result.FullName.Should().Be("Test Testsson");
+        result.FirstName.Should().Be("Test");
+        result.LastName.Should().Be("Testsson");
         result.UserId.Should().NotBeEmpty();
     }
 
@@ -63,21 +65,28 @@ public class AuthServiceTests
     {
         var request = new RegisterRequestDto
         {
-            FullName = "Anna Svensson",
+            FirstName = "Anna",
+            LastName = "Svensson",
             Email = "anna@example.com",
             Password = "SecurePassword123!"
         };
 
         var result = await _sut.RegisterAsync(request);
 
-        result.FullName.Should().Be("Anna Svensson");
+        result.FirstName.Should().Be("Anna");
+        result.LastName.Should().Be("Svensson");
     }
 
     [Fact]
     public async Task LoginAsync_GiltigtLösenord_ReturnerarToken()
     {
         // Seed user
-        var user = new Models.User("Test User", "test@example.com", BCrypt.Net.BCrypt.HashPassword("password123"));
+        var user = new Models.User(
+            "Test",
+            "User",
+            "test@example.com",
+            BCrypt.Net.BCrypt.HashPassword("password123",12,true));
+
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
@@ -94,13 +103,20 @@ public class AuthServiceTests
         result.TokenType.Should().Be("Bearer");
         result.ExpiresIn.Should().Be(3600);
         result.User.Email.Should().Be("test@example.com");
+        result.User.FirstName.Should().Be("Test");
+        result.User.LastName.Should().Be("User");
     }
 
     [Fact]
     public async Task LoginAsync_FelaktigtLösenord_KastarUnauthorized()
     {
         // Seed user
-        var user = new Models.User("Test User", "test@example.com", BCrypt.Net.BCrypt.HashPassword("password123"));
+        var user = new Models.User(
+            "Test",
+            "User",
+            "test@example.com",
+            BCrypt.Net.BCrypt.HashPassword("password123",12,true));
+
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
@@ -131,7 +147,7 @@ public class AuthServiceTests
         result.Should().NotBeNull();
         result.AccessToken.Should().Be("test-jwt-token");
         result.User.Email.Should().Be("google@example.com");
-        result.User.FullName.Should().Be("Google Användare");
+        result.User.FirstName.Should().Be("Google Användare");
     }
 
     [Fact]
@@ -139,7 +155,8 @@ public class AuthServiceTests
     {
         var request = new RegisterRequestDto
         {
-            FullName = "Test",
+            FirstName = "Test",
+            LastName = "Test",
             Email = "test@example.com",
             Password = "Password123!"
         };
@@ -156,7 +173,12 @@ public class AuthServiceTests
     public async Task LoginAsync_AnroparTokenServiceEnGång()
     {
         // Seed user
-        var user = new Models.User("Test User", "test@example.com", BCrypt.Net.BCrypt.HashPassword("password123"));
+        var user = new Models.User(
+            "Test",
+            "User",
+            "test@example.com",
+            BCrypt.Net.BCrypt.HashPassword("password123",12,true));
+
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 

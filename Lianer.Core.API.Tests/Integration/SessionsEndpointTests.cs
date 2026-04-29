@@ -25,7 +25,8 @@ public class SessionsEndpointTests : IClassFixture<CustomWebApplicationFactory>
     {
         var request = new RegisterRequestDto
         {
-            FullName = "Test User",
+            FirstName = "Test",
+            LastName="User",
             Email = email,
             Password = password
         };

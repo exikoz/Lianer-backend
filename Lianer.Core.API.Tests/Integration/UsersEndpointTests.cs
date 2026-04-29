@@ -18,26 +18,25 @@ public class UsersEndpointTests : IClassFixture<CustomWebApplicationFactory>
         _client = factory.CreateClient();
     }
 
-    [Fact]
-    public async Task POST_Users_GiltigRequest_Returnerar201()
+[Fact]
+public async Task POST_Users_GiltigRequest_Returnerar201()
+{
+    var request = new RegisterRequestDto
     {
-        var request = new RegisterRequestDto
-        {
-            FullName = "Test Testsson",
-            Email = "test@example.com",
-            Password = "Secure@Password1"
-        };
+        FirstName = "Test",
+        LastName = "Testsson",
+        Email = "test@example.com",
+        Password = "Secure@Password1"
+    };
 
-        var response = await _client.PostAsJsonAsync("/api/v1/users", request);
+    var response = await _client.PostAsJsonAsync("/api/v1/users", request);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+    response.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        var body = await response.Content.ReadFromJsonAsync<RegisterResponseDto>();
-        body.Should().NotBeNull();
-        body!.Email.Should().Be("test@example.com");
-        body.FullName.Should().Be("Test Testsson");
-        body.UserId.Should().NotBeEmpty();
-    }
+    var userId = await response.Content.ReadFromJsonAsync<Guid>();
+
+    userId.Should().NotBeEmpty();
+}
 
     [Fact]
     public async Task POST_Users_SaknarEmail_Returnerar400()
