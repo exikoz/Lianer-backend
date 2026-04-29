@@ -78,7 +78,7 @@ public class UserService(IUserRepository r) : IUserService
     /// Retrieves full details for a user by ID.
     /// </summary>
     /// <param name="Id">The user GUID.</param>
-    /// <param name="ct"></param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>A DTO containing user details.</returns>
     public async Task<UserDetails> GetUserById(Guid Id, CancellationToken ct)
     {
@@ -91,6 +91,7 @@ public class UserService(IUserRepository r) : IUserService
     /// Retrieves a basic summary of a user by ID.
     /// </summary>
     /// <param name="Id">The user GUID.</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>A DTO containing a user summary.</returns>
     public async Task<UserSummary> GetUserSummaryById(Guid Id,CancellationToken ct)
     {
@@ -102,6 +103,7 @@ public class UserService(IUserRepository r) : IUserService
     /// <summary>
     /// Retrieves summaries for all users in the system.
     /// </summary>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>An enumerable of user summaries.</returns>
     public async Task<IEnumerable<UserSummary>> GetAllUserSummaries(CancellationToken ct)
     {

@@ -8,10 +8,7 @@ namespace Lianer.Core.API
         {
             var builder = WebApplication.CreateBuilder(args);
             // --- Azure Key Vault (Always active) ---
-            if (builder.Environment.IsProduction())
-            {
-                builder.SetupAzureKeyVault();
-            }
+            builder.SetupAzureKeyVault();
             builder.Services.AddMemoryCache();
             builder.Services
             .SetupInMemoryDb() 
