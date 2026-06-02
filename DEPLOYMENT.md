@@ -1,10 +1,8 @@
-# Utvärdering: Containerisering av backend-mikrotjänster (Task 1)
+# Deployment and Operations Documentation (Lianer Fullstack)
 
-Detta dokument beskriver utvärderingen, designbesluten och säkerhetsövervägandena kring containeriseringen av `Lianer.Core.API` och `Lianer.Features.API`.
+Detta dokument beskriver utvärderingen, designbesluten och säkerhetsövervägandena kring driftsättningen av Lianer fullstack-applikation.
 
----
-
-## 1. Vad som har gjorts (What was done)
+## 1. Vad som har gjorts: Containerisering av backend (Task 1)
 Vi har containeriserat de två .NET 9.0 API-mikrotjänsterna:
 1. Skapat **[Lianer.Core.API/Dockerfile](file:///c:/Users/D/Lianer-backend/Lianer.Core.API/Dockerfile)** med en multi-stage build-struktur.
 2. Skapat **[Lianer.Features.API/Dockerfile](file:///c:/Users/D/Lianer-backend/Lianer.Features.API/Dockerfile)** med motsvarande struktur.
