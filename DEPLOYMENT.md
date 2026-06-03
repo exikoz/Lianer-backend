@@ -48,13 +48,13 @@ Under planeringsfasen övervägde vi två olika alternativ för körningsmiljön
 <summary><b>2. Containerisering & Molnvärdskap för Frontend (Task 2 & 5)</b></summary>
 
 ### Vad som har gjorts
-Vi utvärderade hur vi bäst hostar vår Vanilla JS-frontend i Azure. Resultatet blev en lösning som uppfyller kraven för både driftsättning och flexibilitet:
-1. **Utkast till Container (Nginx):** Vi skapade en **[docs/frontend-drafts/Dockerfile](file:///c:/Users/D/Lianer-backend/docs/frontend-drafts/Dockerfile)** som paketerar frontenden med en minimal Nginx-avbild (Alpine Linux). Detta säkerställer att vi har en container-redo version av frontend (enligt Task 2 krav).
-2. **Azure Static Web Apps (Vald lösning):** Efter utvärdering kom vi fram till att **Azure Static Web Apps (SWA)** är det absolut bästa valet för att bygga och hosta vår Vanilla JS-frontend, vilket integrerar direkt med vår CI/CD pipeline (Task 5).
+Jag utvärderade hur frontenden (Vanilla JS) bäst hostas i Azure. Resultatet blev en lösning som uppfyller kraven för både driftsättning och flexibilitet:
+1. **Utkast till Container (Nginx):** Jag skapade en **[docs/frontend-drafts/Dockerfile](file:///c:/Users/D/Lianer-backend/docs/frontend-drafts/Dockerfile)** som paketerar frontenden med en minimal Nginx-avbild (Alpine Linux). Detta säkerställer att det finns en container-redo version av frontend (enligt Task 2 krav).
+2. **Azure Static Web Apps (Vald lösning):** Efter utvärdering kom jag fram till att **Azure Static Web Apps (SWA)** är det absolut bästa valet för att bygga och hosta Vanilla JS-frontenden, vilket integrerar direkt med projektets CI/CD pipeline (Task 5).
 
-### Varför vi gjorde det
-- **Varför Nginx-Dockerfile-utkastet skapades:** För att garantera applikationens portabilitet. Genom att använda `nginx:alpine` får vi en minimal, säker och blixtsnabb webbserver. Skulle vi i framtiden behöva migrera till t.ex. Azure Container Apps för frontenden, är utkastet redan färdigt.
-- **Varför vi hostar via Static Web Apps (SWA):** Eftersom frontenden är byggd i Vanilla JavaScript (statiska filer) utan server-side rendering, är SWA det optimala valet. SWA minimerar driftsoverhead – vi behöver inte patcha underliggande operativsystem eller konfigurera Nginx i produktion. Dessutom får vi gratis SSL-certifikat, global distribution via CDN och en sömlös CI/CD-upplevelse via GitHub Actions direkt från start.
+### Varför detta valdes
+- **Varför Nginx-Dockerfile-utkastet skapades:** För att garantera applikationens portabilitet. Genom att använda `nginx:alpine` uppnås en minimal, säker och blixtsnabb webbserver. Skulle det i framtiden uppstå ett behov att migrera till t.ex. Azure Container Apps för frontenden, är utkastet redan färdigt.
+- **Varför hosting sker via Static Web Apps (SWA):** Eftersom frontenden är byggd i Vanilla JavaScript (statiska filer) utan server-side rendering, är SWA det optimala valet. SWA minimerar driftsoverhead – man behöver inte patcha underliggande operativsystem eller konfigurera Nginx i produktion. Dessutom ingår gratis SSL-certifikat, global distribution via CDN och en sömlös CI/CD-upplevelse via GitHub Actions direkt från start.
 
 </details>
 

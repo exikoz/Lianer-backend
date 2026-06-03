@@ -64,7 +64,8 @@ namespace Lianer.Features.API
             // Includes exponential retry and a circuit breaker to prevent cascading failures.
             builder.Services.AddHttpClient<CoreApiClient>(client =>
             {
-                client.BaseAddress = new Uri("http://localhost:5297/");
+                var coreApiUrl = builder.Configuration["Services:CoreApiUrl"] ?? "http://localhost:5297/";
+                client.BaseAddress = new Uri(coreApiUrl);
             })
             .AddResilienceHandler("core-api-pipeline", pipeline =>
             {
