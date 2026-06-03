@@ -45,16 +45,17 @@ Under planeringsfasen övervägde vi två olika alternativ för körningsmiljön
 </details>
 
 <details>
-<summary><b>2. Containerisering & Molnvärdskap för Frontend (Task 2 & 5)</b></summary>
+<summary><b>2. Containerisering & Molnvärdskap för Frontend</b></summary>
 
 ### Vad som har gjorts
 Jag utvärderade hur frontenden (Vanilla JS) bäst hostas i Azure. Resultatet blev en lösning som uppfyller kraven för både driftsättning och flexibilitet:
-1. **Utkast till Container (Nginx):** Jag skapade en **[docs/frontend-drafts/Dockerfile](file:///c:/Users/D/Lianer-backend/docs/frontend-drafts/Dockerfile)** som paketerar frontenden med en minimal Nginx-avbild (Alpine Linux). Detta säkerställer att det finns en container-redo version av frontend (enligt Task 2 krav).
+1. **Utkast till Container (Rootless Nginx):** Jag skapade en `Dockerfile` som paketerar frontenden med en minimal, obehörig (rootless) Nginx-avbild (`nginxinc/nginx-unprivileged:alpine`) som lyssnar på port 8080. Detta gjordes för att maximera säkerheten enligt "Least Privilege"-principen (VG-krav). Filen ligger nu direkt i roten på frontend-repot, vilket säkerställer att vi har en säker, container-redo version av frontenden (Task 2).
 2. **Azure Static Web Apps (Vald lösning):** Efter utvärdering kom jag fram till att **Azure Static Web Apps (SWA)** är det absolut bästa valet för att bygga och hosta Vanilla JS-frontenden, vilket integrerar direkt med projektets CI/CD pipeline (Task 5).
 
 ### Varför detta valdes
 - **Varför Nginx-Dockerfile-utkastet skapades:** För att garantera applikationens portabilitet. Genom att använda `nginx:alpine` uppnås en minimal, säker och blixtsnabb webbserver. Skulle det i framtiden uppstå ett behov att migrera till t.ex. Azure Container Apps för frontenden, är utkastet redan färdigt.
 - **Varför hosting sker via Static Web Apps (SWA):** Eftersom frontenden är byggd i Vanilla JavaScript (statiska filer) utan server-side rendering, är SWA det optimala valet. SWA minimerar driftsoverhead – man behöver inte patcha underliggande operativsystem eller konfigurera Nginx i produktion. Dessutom ingår gratis SSL-certifikat, global distribution via CDN och en sömlös CI/CD-upplevelse via GitHub Actions direkt från start.
+- **Övervägt alternativ (Vercel):** Initialt övervägdes Vercel på grund av deras fantastiska serverless-abstraktion, vilket helt hade eliminerat behovet av containerhantering för frontenden och gett extrem säkerhet "out-of-the-box" (inga OS-patchar att hantera). Men eftersom detta är ett .NET-projekt där integration med Microsoft-ekosystemet är i fokus (enligt uppgiftsbeskrivningen), föll det slutgiltiga valet på Azure SWA. Azure SWA ger oss samma smidiga developer experience som Vercel, men inom rätt molnmiljö.
 
 </details>
 
