@@ -43,3 +43,79 @@ Under planeringsfasen övervägde vi två olika alternativ för körningsmiljön
   - Kräver att man explicit ställer in `.NET` att lyssna på port `8080` (eftersom icke-root-användare inte får lyssna på portar under 1024, t.ex. standardport 80).
 
 </details>
+
+<details>
+<summary><b>2. Containerisering & Molnvärdskap för Frontend (Task 2 & 5)</b></summary>
+
+### Vad som har gjorts
+Vi utvärderade hur vi bäst hostar vår Vanilla JS-frontend i Azure. Resultatet blev en lösning som uppfyller kraven för både driftsättning och flexibilitet:
+1. **Utkast till Container (Nginx):** Vi skapade en **[docs/frontend-drafts/Dockerfile](file:///c:/Users/D/Lianer-backend/docs/frontend-drafts/Dockerfile)** som paketerar frontenden med en minimal Nginx-avbild (Alpine Linux). Detta säkerställer att vi har en container-redo version av frontend (enligt Task 2 krav).
+2. **Azure Static Web Apps (Vald lösning):** Efter utvärdering kom vi fram till att **Azure Static Web Apps (SWA)** är det absolut bästa valet för att bygga och hosta vår Vanilla JS-frontend, vilket integrerar direkt med vår CI/CD pipeline (Task 5).
+
+### Varför vi gjorde det
+- **Varför Nginx-Dockerfile-utkastet skapades:** För att garantera applikationens portabilitet. Genom att använda `nginx:alpine` får vi en minimal, säker och blixtsnabb webbserver. Skulle vi i framtiden behöva migrera till t.ex. Azure Container Apps för frontenden, är utkastet redan färdigt.
+- **Varför vi hostar via Static Web Apps (SWA):** Eftersom frontenden är byggd i Vanilla JavaScript (statiska filer) utan server-side rendering, är SWA det optimala valet. SWA minimerar driftsoverhead – vi behöver inte patcha underliggande operativsystem eller konfigurera Nginx i produktion. Dessutom får vi gratis SSL-certifikat, global distribution via CDN och en sömlös CI/CD-upplevelse via GitHub Actions direkt från start.
+
+</details>
+
+---
+
+## Kommande Sektioner (För Teamet)
+
+*Här förbereder vi strukturen för resterande Epics. När dina kollegor är klara med sina delar kan ni fylla på med detaljer och arkitekturbeslut (ADR) här för att säkerställa att ni uppfyller kraven för G och VG.*
+
+<details>
+<summary><b>3. CI/CD Pipeline (Epic 3) - <i>[Kommande]</i></b></summary>
+
+### Vad som har gjorts
+- *[Fyll i hur GitHub Actions / pipelinen är uppsatt för bygg och test]*
+- *[Fyll i hur deploy sker till Azure]*
+
+### Varför vi gjorde det (ADR & VG-krav)
+- **Quality Gates (VG):** *[Förklara hur deploy endast sker om testerna är gröna. Beskriv er spårbarhet, t.ex. hur image-taggning fungerar med commit-SHA.]*
+
+</details>
+
+<details>
+<summary><b>4. Säkerhet & Key Vault (Epic 4) - <i>[Kommande]</i></b></summary>
+
+### Vad som har gjorts
+- *[Fyll i hur Azure Key Vault integrerats och hur Managed Identity används]*
+
+### Varför vi gjorde det (ADR & VG-krav)
+- **Säkerhetsdjup & Hotbild (VG):** *[Beskriv hotbilden (t.ex. läckta nycklar i koden). Förklara "Least Privilege" med RBAC, och varför hemligheter hämtas on-the-fly.]*
+
+</details>
+
+<details>
+<summary><b>5. Övervakning & Felsökbarhet (Epic 5) - <i>[Kommande]</i></b></summary>
+
+### Vad som har gjorts
+- *[Fyll i hur Application Insights eller Log Analytics är konfigurerat]*
+
+### Varför vi gjorde det (ADR & VG-krav)
+- **Observability på riktigt (VG):** *[Visa hur ni mäter/spårar en hel request-kedja (från frontend till backend). Lägg in en kort runbook/instruktion här för hur man felsöker en kraschande applikation.]*
+
+</details>
+
+<details>
+<summary><b>6. Fullstack-integration & Säkerhet (Epic 6) - <i>[Kommande]</i></b></summary>
+
+### Vad som har gjorts
+- *[Fyll i hur frontend och backend kommunicerar (CORS-konfiguration, Auth-flöden)]*
+
+### Varför vi gjorde det (ADR & VG-krav)
+- **Säkerhetsdjup (VG):** *[Förklara varför `AllowAnyOrigin` inte används i produktion. Beskriv eventuella motåtgärder i auth-flödet och hur systemet är resilient (t.ex. med Polly Circuit Breaker).]*
+
+</details>
+
+<details>
+<summary><b>7. AI-Integration (Epic 7) - <i>[Kommande]</i></b></summary>
+
+### Vad som har gjorts
+- *[Fyll i vilken AI-tjänst som används och vad den gör i appen]*
+
+### Varför vi gjorde det (ADR & VG-krav)
+- **Arkitekturbeslut:** *[Förklara varför ni valde denna tjänst och hur felhanteringen ser ut (UX-fallback om AI-tjänsten är nere).]*
+
+</details>

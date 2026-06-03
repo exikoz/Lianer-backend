@@ -1,0 +1,19 @@
+# Exkludera git och CI/CD-konfigurationer
+.git/
+.github/
+
+# Exkludera IDE och editor-specifika filer/mappar
+.vs/
+.vscode/
+.idea/
+.obsidian/
+*.suo
+*.user
+
+# Exkludera dokumentation
+README.md
+docs/
+
+# Eventuella lokala loggar eller slaskfiler
+*.log
+node_modules/
