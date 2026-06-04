@@ -45,17 +45,21 @@ Under planeringsfasen övervägde vi två olika alternativ för körningsmiljön
 </details>
 
 <details>
-<summary><b>2. Containerisering & Molnvärdskap för Frontend</b></summary>
+<summary><b>2. Containerisering & Molnvärdskap för Frontend (ADR)</b></summary>
 
 ### Vad som har gjorts
-Jag utvärderade hur frontenden (Vanilla JS) bäst hostas i Azure. Resultatet blev en lösning som uppfyller kraven för både driftsättning och flexibilitet:
-1. **Utkast till Container (Rootless Nginx):** Jag skapade en `Dockerfile` som paketerar frontenden med en minimal, obehörig (rootless) Nginx-avbild (`nginxinc/nginx-unprivileged:alpine`) som lyssnar på port 8080. Detta gjordes för att maximera säkerheten enligt "Least Privilege"-principen (VG-krav). Filen ligger nu direkt i roten på frontend-repot, vilket säkerställer att vi har en säker, container-redo version av frontenden (Task 2).
-2. **Azure Static Web Apps (Vald lösning):** Efter utvärdering kom jag fram till att **Azure Static Web Apps (SWA)** är det absolut bästa valet för att bygga och hosta Vanilla JS-frontenden, vilket integrerar direkt med projektets CI/CD pipeline (Task 5).
+Efter att ha utvärderat hur frontenden (Vanilla JS) bäst hostas i Azure har vi implementerat följande molnarkitektur:
+1. **Container (Rootless Nginx):** Vi har skapat en `Dockerfile` för frontenden som paketerar appen i en minimal, obehörig (rootless) Nginx-avbild (`nginxinc/nginx-unprivileged:alpine`) som lyssnar på port 8080. Detta för att maximera säkerheten enligt "Least Privilege"-principen (VG-krav).
+2. **Azure Container Apps (Slutgiltig Lösning):** Frontenden hostas som en Container App i samma miljö (`Managed Environment`) som våra backend-API:er, vilket ger en enhetlig nätverks- och driftsättningsarkitektur.
+3. **Byggprocess (Workaround för Studentprenumeration):** För att hantera begränsningar i Azure for Students (där tjänsten *ACR Tasks* är blockerad) byggs Docker-imagarna lokalt via vanlig Docker Engine (eller i GitHub Actions runner-miljö) innan de pushas till Azure Container Registry (ACR).
 
 ### Varför detta valdes
-- **Varför Nginx-Dockerfile-utkastet skapades:** För att garantera applikationens portabilitet. Genom att använda `nginx:alpine` uppnås en minimal, säker och blixtsnabb webbserver. Skulle det i framtiden uppstå ett behov att migrera till t.ex. Azure Container Apps för frontenden, är utkastet redan färdigt.
-- **Varför hosting sker via Static Web Apps (SWA):** Eftersom frontenden är byggd i Vanilla JavaScript (statiska filer) utan server-side rendering, är SWA det optimala valet. SWA minimerar driftsoverhead – man behöver inte patcha underliggande operativsystem eller konfigurera Nginx i produktion. Dessutom ingår gratis SSL-certifikat, global distribution via CDN och en sömlös CI/CD-upplevelse via GitHub Actions direkt från start.
-- **Övervägt alternativ (Vercel):** Initialt övervägdes Vercel på grund av deras fantastiska serverless-abstraktion, vilket helt hade eliminerat behovet av containerhantering för frontenden och gett extrem säkerhet "out-of-the-box" (inga OS-patchar att hantera). Men eftersom detta är ett .NET-projekt där integration med Microsoft-ekosystemet är i fokus (enligt uppgiftsbeskrivningen), föll det slutgiltiga valet på Azure SWA. Azure SWA ger oss samma smidiga developer experience som Vercel, men inom rätt molnmiljö.
+Under implementationen stötte vi på flera strikta Azure Policy-begränsningar knutna till Student-kontona, vilket tvingade fram avgörande arkitekturval:
+
+- **Övervägt alternativ 1 (Azure Static Web Apps):** Initialt var planen att använda SWA eftersom det är industristandard för Vanilla JS. Dock upptäcktes att studentkontona endast tillåter resurser i 5 specifika regioner (bl.a. *Italy North*). Eftersom SWA inte är tillgängligt i någon av dessa 5 godkända regioner var denna tjänst **fysiskt omöjlig** att skapa (Policy Error: `RequestDisallowedByAzure`).
+- **Valt alternativ (Azure Container Apps):** Genom att pivotera till att containerisera även frontenden (vilket uppfyller alternativa betygskrav) kunde vi runda region-spärrarna. Detta gav oss oväntade fördelar:
+  - **Enhetlighet:** Hela ekosystemet (frontend och backend) ligger nu i samma Container Apps-miljö.
+  - **Säkerhetsdjup:** Den rootless Nginx-containern adderar ytterligare ett lager av minsta behörighet (Defense in Depth).
 
 </details>
 
