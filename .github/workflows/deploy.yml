@@ -70,6 +70,15 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      # STEG 1.5: Deploya Azure Key Vault (Infrastruktur)
+      - name: Deploy Key Vault Infrastructure
+        run: |
+          az deployment group create \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --template-file infra/keyvault.bicep \
+            --parameters keyVaultName=kv-lianer-prod
+
+
       # STEG 2: Logga in mot ACR
       - name: Log in to Azure Container Registry
         run: az acr login --name ${{ env.ACR_NAME }}
