@@ -37,11 +37,11 @@ services:
     build:
       # NOTE: During local team tests, you can change this context path to your cloned 
       # frontend repository (e.g., '../Lianer-frontend') to run your actual application.
-      # Currently uses the mock/verification page in PLAN/frontend-drafts.
-      context: ./PLAN/frontend-drafts
+      # Peka på din riktiga frontend-mapp istället för drafts
+      context: "../Documents/Projekt inlämning/K3 Project i team APP"
       dockerfile: Dockerfile
     ports:
-      - "3000:80" # Map host port 3000 to Nginx container port 80
+      - "3000:8080" # Map host port 3000 to Nginx container port 8080
     networks:
       - lianer-network
     depends_on:
