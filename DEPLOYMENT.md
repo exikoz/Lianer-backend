@@ -82,13 +82,19 @@ Under implementationen stötte vi på flera strikta Azure Policy-begränsningar 
 </details>
 
 <details>
-<summary><b>4. Säkerhet & Key Vault (Epic 4) - <i>[Kommande]</i></b></summary>
+<summary><b>4. Säkerhet & Key Vault (Epic 4)</b></summary>
 
 ### Vad som har gjorts
-- *[Fyll i hur Azure Key Vault integrerats och hur Managed Identity används]*
+För att garantera högsta möjliga säkerhet för applikationerna har vi implementerat Azure Key Vault och därmed helt eliminerat hanteringen av lösenord och anslutningssträngar (secrets) direkt i källkoden eller `appsettings.json`.
+1. **Infrastruktur som kod (Bicep):** Vi har definierat infrastrukturen för Key Vault i `infra/keyvault.bicep`. Skapandet av valvet är helt automatiserat och sker genom vår CI/CD pipeline i `deploy.yml`.
+2. **Managed Identities (Lösenordsfri åtkomst):** Vi har skapat `infra/roleAssignments.bicep` som använder Azure RBAC för att tilldela rollen *Key Vault Secrets User* till våra mikrotjänster. Detta ger tjänsterna automatisk åtkomst i Azure.
+3. **Azure SDK Integration:** I `Program.cs` för både Core och Features API använder vi paketet `Azure.Identity`. Genom att anropa `DefaultAzureCredential()` hämtar .NET-koden automatiskt in rättigheter baserat på miljön den körs i, och kan tanka ner hemligheter från Key Vaultet helt transparent.
 
 ### Varför vi gjorde det (ADR & VG-krav)
-- **Säkerhetsdjup & Hotbild (VG):** *[Beskriv hotbilden (t.ex. läckta nycklar i koden). Förklara "Least Privilege" med RBAC, och varför hemligheter hämtas on-the-fly.]*
+- **Infrastructure-as-Code och Bicep RBAC:** Vi valde aktivt att inte bygga infrastrukturen med manuella skript, utan att från start använda **Azure RBAC via Bicep** (`enableRbacAuthorization: true`). Detta ger en mer modern "Zero Trust"-modell, full spårbarhet via Git och minimerar manuella fel jämfört med den äldre "Access Policies"-metoden. Våra Container Apps får *enbart* läsrättigheter till hemligheterna (rollen *Key Vault Secrets User*).
+- **Workaround för Azure for Students:** Under arbetet med molninfrastrukturen stötte vi på hårda blockeringar ("Policy Error") från skolkontots prenumeration. Tjänster som ACR Tasks är blockerade och Static Web Apps är förbjudet i de enda 5 tillåtna regionerna (bl.a. Italy North). Vår arkitekturlösning var att köra **allt** (även frontend) som Container Apps i Italy North, och att låta GitHub Actions bygga containrarna istället för Azure. Denna insikt tvingade oss att bygga vår infrastruktur och pipeline mer robust från grunden.
+- **Eliminera hotbilden för läckta nycklar:** Den vanligaste säkerhetsbristen vid molnutveckling är att utvecklare råkar commita (eller spara) produktionslösenord i Git. Genom att tvinga applikationen att hämta dessa "on-the-fly" vid uppstart från Key Vault finns inga riktiga lösenord tillgängliga i klartext för obehöriga som granskar vår källkod.
+- **Defense in Depth (Säkerhetsdjup):** I kombination med de rootless Docker-containrarna vi skapade tidigare (Epic 2), lägger Managed Identity till ytterligare ett identitetsbaserat skyddslager. Detta uppfyller tydligt VG-kraven för molnsäkerhet.
 
 </details>
 
