@@ -2,6 +2,11 @@
 
 Detta dokument beskriver utvärderingen, designbesluten och säkerhetsövervägandena kring driftsättningen av Lianer fullstack-applikation.
 
+## Produktionsmiljö (Azure Italy North)
+- **Frontend:** `https://lianer-frontend.icybush-5ce7e353.italynorth.azurecontainerapps.io`
+- **Core API:** `https://lianer-core-api.icybush-5ce7e353.italynorth.azurecontainerapps.io`
+- **Features API:** `https://lianer-features-api.icybush-5ce7e353.italynorth.azurecontainerapps.io`
+
 ---
 
 <details>
@@ -70,15 +75,17 @@ Under implementationen stötte vi på flera strikta Azure Policy-begränsningar 
 *Här förbereder vi strukturen för resterande Epics. När dina kollegor är klara med sina delar kan ni fylla på med detaljer och arkitekturbeslut (ADR) här för att säkerställa att ni uppfyller kraven för G och VG.*
 
 <details>
-<summary><b>3. CI/CD Pipeline (Epic 3) - <i>[Kommande]</i></b></summary>
+<summary><b>3. CI/CD Pipeline (Epic 3)</b></summary>
 
 ### Vad som har gjorts
-- *[Fyll i hur GitHub Actions / pipelinen är uppsatt för bygg och test]*
-- *[Fyll i hur deploy sker till Azure]*
+Vi har implementerat en fullständig och enhetlig CI/CD-pipeline via GitHub Actions över både vårt Frontend- och Backend-repository:
+1. **Pull Request Validation (`pr.yml`):** Varje gång en PR skapas mot `main` eller `dev` triggas en pipeline som validerar koden. I frontenden körs `npm ci`, ESLint, och Jest-tester. I backenden körs `dotnet restore`, `build` och `test`. Dessutom görs en "dry run"-byggning (`docker build`) av samtliga Dockerfiler (Nginx, Core API, Features API) för att garantera att infrastrukturen håller.
+2. **Continuous Deployment (`deploy.yml`):** Vid godkänd merge till `main` triggas en deploy-pipeline. Pipelinen loggar in mot Azure via lösenordsfria hemligheter (Service Principal / Federated Credentials), bygger produktionsversionerna av Docker-containrarna och laddar upp (pushar) dem till Azure Container Registry (ACR).
+3. **Automatiskt Moln-uppdatering:** Som sista steg i `deploy.yml` anropar pipelinen Azure Container Apps (`az containerapp update`) och instruerar Azure att dra ner och driftsätta den nyss uppladdade imagen i Italy North-miljön.
 
 ### Varför vi gjorde det (ADR & VG-krav)
-- **Quality Gates (VG):** *[Förklara hur deploy endast sker om testerna är gröna. Beskriv er spårbarhet, t.ex. hur image-taggning fungerar med commit-SHA.]*
-
+- **Quality Gates (Förhindra trasig kod i produktion):** Genom att tvinga alla PRs att passera bygg- och teststegen i `pr.yml` innan de kan mergas, fungerar GitHub Actions som en strikt Quality Gate. Om ett enhetstest fallerar eller om en Docker-image inte går att bygga, blockeras hela sammanslagningen. Detta maximerar kodkvaliteten och systemstabiliteten (VG-krav uppfyllt).
+- **Extrem Spårbarhet & SHA-taggning:** Istället för att bara tagga våra Docker-avbilder med `latest` (vilket gör det omöjligt att veta exakt vilken kod som körs om något kraschar), skapade vi ett arkitekturbeslut att **alltid tagga avbilderna med GitHub Commit SHA** (t.ex. `lianer-frontend:${{ github.sha }}`). När vi därefter beordrar Azure Container Apps att använda denna specifika SHA-tagg, har vi uppnått absolut spårbarhet. Uppstår ett fel i produktion kan vi direkt matcha det mot den specifika raden kod i GitHub-repot. (VG-krav uppfyllt).
 </details>
 
 <details>
