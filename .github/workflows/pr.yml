@@ -1,21 +1,22 @@
+name: Pull Request Validation
+
 on:
-  push:
-    branches: [ "main", "dev" ]
   pull_request:
     branches: [ "main", "dev" ]
 
 jobs:
-  build_and_test:
+  validate:
+    name: Build & Test
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET
+      - name: Setup .NET 9
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.x
+          dotnet-version: '9.0.x'
 
       - name: Restore dependencies
         run: dotnet restore
@@ -25,3 +26,9 @@ jobs:
 
       - name: Run tests
         run: dotnet test --configuration Release --no-build --verbosity normal
+
+      - name: Validate Core API Dockerfile
+        run: docker build -t test-core-api -f Lianer.Core.API/Dockerfile .
+
+      - name: Validate Features API Dockerfile
+        run: docker build -t test-features-api -f Lianer.Features.API/Dockerfile .
