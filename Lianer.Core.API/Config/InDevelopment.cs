@@ -14,7 +14,7 @@ public static class InDevelopment
             // Vi skickar med namnet "GoogleAuth" som matchar vår DocumentTransformer
             options.AddAuthorizationCodeFlow("GoogleAuth", auth =>
             {
-                auth.ClientId = config["Google:Auth:ClientId"];
+                auth.ClientId = config["GoogleAuth:ClientId"];
                 auth.SelectedScopes = ["openid", "email", "profile"];
             });
             });

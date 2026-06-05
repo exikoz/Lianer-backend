@@ -30,7 +30,15 @@ namespace Lianer.Features.API
             var vaultUri = builder.Configuration["AzureKeyVault:VaultUri"];
             if (!string.IsNullOrEmpty(vaultUri))
             {
-                builder.Configuration.AddAzureKeyVault(new Uri(vaultUri), new DefaultAzureCredential());
+                try
+                {
+                    builder.Configuration.AddAzureKeyVault(new Uri(vaultUri), new DefaultAzureCredential());
+                    Console.WriteLine("Features API: Key Vault connection initialized to: " + vaultUri);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Features API: Key Vault connection failed. Falling back to local secrets. (Error: {ex.Message})");
+                }
             }
 
             // --- Caching Support (K-128) ---

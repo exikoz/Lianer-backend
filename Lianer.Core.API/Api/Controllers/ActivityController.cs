@@ -36,6 +36,7 @@ public class ActivityController : ControllerBase
     /// <param name="id">User id.</param>
     /// <param name="currentPage">Page number.</param>
     /// <param name="pageSize">Items per page.</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>A paginated list of activities.</returns>
     [HttpGet("user/{id:guid}")]
     [ProducesResponseType(typeof(IReadOnlyList<ActivitySummary>), StatusCodes.Status200OK)]
@@ -61,6 +62,7 @@ public class ActivityController : ControllerBase
     /// Gets a specific activity by id.
     /// </summary>
     /// <param name="id">Activity id.</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>The requested activity.</returns>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(ActivitySummary), StatusCodes.Status200OK)]
@@ -80,6 +82,7 @@ public class ActivityController : ControllerBase
     /// Creates a new activity.
     /// </summary>
     /// <param name="request">Activity creation data.</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>The created activity.</returns>
     [HttpPost]
     [ProducesResponseType(typeof(ActivitySummary), StatusCodes.Status201Created)]
@@ -108,6 +111,7 @@ public class ActivityController : ControllerBase
     /// Updates an existing activity.
     /// </summary>
     /// <param name="request">Updated activity data.</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>The updated activity.</returns>
     [HttpPut]
     [ProducesResponseType(typeof(ActivitySummary), StatusCodes.Status200OK)]
@@ -126,6 +130,12 @@ public class ActivityController : ControllerBase
         return Ok(updated);
     }
 
+    /// <summary>
+    /// Deletes an activity by id.
+    /// </summary>
+    /// <param name="id">Activity id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>No content.</returns>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -140,6 +150,13 @@ public class ActivityController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Lists the latest updated activities.
+    /// </summary>
+    /// <param name="currentPage">Page number.</param>
+    /// <param name="pageSize">Items per page.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A paginated list of activities.</returns>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<ActivitySummary>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ActivitySummary>>> ListLatestActivities(

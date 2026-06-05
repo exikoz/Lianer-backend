@@ -42,23 +42,23 @@ public class ActivityService(IActivityRepository repo) : IActivityService
     #region Read functions (paged, get by id etc)
 
 
-    public async Task<ActivitySummary?> GetActivityById
-    (Guid id, CancellationToken ct)
+    public async Task<ActivitySummary?> GetActivityById(Guid id, CancellationToken ct)
     {
         Guard.Against.NullOrEmptyGuid(id);
-        var response =  await _repo.GetById(id,ct);
+        var response = await _repo.GetById(id, ct);
+
+        if (response == null) return null;
         
         return new ActivitySummary
         (
             response.Id, 
             response.Description ?? "",
-            response.AssignedTo ?? null,
+            response.AssignedTo,
             response.CreatedBy,
             response.CreatedAt, 
             response.UpdatedAt,
             response.Status
         );
-
     }   
 
     #endregion

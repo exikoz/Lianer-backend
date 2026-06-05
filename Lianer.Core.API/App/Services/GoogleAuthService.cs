@@ -26,8 +26,8 @@ public class GoogleAuthService : IGoogleAuthService
     /// <returns>The complete Google authorization URL</returns>
     public string GetGoogleLoginUrl()
     {
-        var clientId = _configuration["Google:Auth:ClientId"];
-        var redirectUri = _configuration["Google:Auth:RedirectUri"];
+        var clientId = _configuration["GoogleAuth:ClientId"];
+        var redirectUri = _configuration["GoogleAuth:RedirectUri"];
         var baseUrl = "https://accounts.google.com/o/oauth2/v2/auth";
 
         var url = $"{baseUrl}?" +

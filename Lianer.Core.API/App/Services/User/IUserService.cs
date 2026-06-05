@@ -25,6 +25,7 @@ public interface IUserService
     /// Retrieves detailed information about a specific user.
     /// </summary>
     /// <param name="Id">The unique identifier of the user.</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>The user details.</returns>
     Task<UserDetails> GetUserById(Guid Id, CancellationToken ct);
 
@@ -32,12 +33,14 @@ public interface IUserService
     /// Retrieves a basic summary of a specific user.
     /// </summary>
     /// <param name="Id">The unique identifier of the user.</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>The user summary.</returns>
     Task<UserSummary> GetUserSummaryById(Guid Id, CancellationToken ct);
 
     /// <summary>
     /// Retrieves summaries for all registered users.
     /// </summary>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>A collection of user summaries.</returns>
     Task<IEnumerable<UserSummary>> GetAllUserSummaries(  CancellationToken ct);
 

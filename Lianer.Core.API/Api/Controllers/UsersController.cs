@@ -39,6 +39,7 @@ public class UsersController : ControllerBase
     /// <summary>
     /// Gets a list of all users
     /// </summary>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>List of users</returns>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<UserSummary>), StatusCodes.Status200OK)]
@@ -68,6 +69,7 @@ public class UsersController : ControllerBase
     /// Creates a new user account (registration)
     /// </summary>
     /// <param name="request">User data (name, email, password)</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>Created user</returns>
     /// <response code="201">User created successfully</response>
     /// <response code="400">Invalid input or email already registered</response>
@@ -94,7 +96,7 @@ public class UsersController : ControllerBase
     /// Gets a specific user
     /// </summary>
     /// <param name="id">User ID</param>
-    /// <param name="ct"></param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>User details</returns>
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(UserSummary), StatusCodes.Status200OK)]
@@ -134,6 +136,7 @@ public class UsersController : ControllerBase
     /// </summary>
     /// <param name="id">The unique identifier of the user to update</param>
     /// <param name="request">The updated user data</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>No content on success</returns>
     /// <response code="204">User updated successfully</response>
     /// <response code="400">Invalid input or ID mismatch</response>
@@ -165,6 +168,7 @@ public class UsersController : ControllerBase
     /// Deletes a user account (only allowed for the user themselves)
     /// </summary>
     /// <param name="id">The unique identifier of the user to delete</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>No content on success</returns>
     /// <response code="204">User deleted successfully</response>
     /// <response code="403">Forbidden - users can only delete their own account</response>
