@@ -1,0 +1,128 @@
+# ==================================================================================
+# CI/CD Pipeline - LIANER Backend (Azure for Students)
+#
+# Autentisering: Service Principal via AZURE_CREDENTIALS (JSON)
+#
+# Nodvandiga GitHub Secrets (Settings -> Secrets -> Actions):
+#   AZURE_CREDENTIALS  - SP JSON med Contributor-scope pa rg-lianer-prod
+#                        (github-actions-lianer-backend, redan satt)
+#
+# OBS - Studentkontobegransningar som denna pipeline hanterar:
+#   ACR Tasks (az acr build) ar blockerat -> anvander docker build + push istallet
+#   Static Web Apps fungerar inte -> frontend ar en separat Container App
+#   Region: Italy North
+# ==================================================================================
+
+name: CI/CD Pipeline - LIANER Backend
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  RESOURCE_GROUP: rg-lianer-prod
+  ACR_NAME: acrlianerprod
+  ACR_SERVER: acrlianerprod.azurecr.io
+  CORE_API_APP: lianer-core-api
+  FEATURES_API_APP: lianer-features-api
+
+jobs:
+  # ---------------------------------------------------------------------------------
+  # JOB 1: Bygg och testa .NET-projekten
+  # ---------------------------------------------------------------------------------
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test --configuration Release --no-build --verbosity normal
+
+  # ---------------------------------------------------------------------------------
+  # JOB 2: Deploya till Azure (kors bara om build + test ar grona)
+  # ---------------------------------------------------------------------------------
+  deploy:
+    name: Deploy to Azure
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # STEG 1: Logga in mot Azure
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # STEG 2: Logga in mot ACR
+      - name: Log in to Azure Container Registry
+        run: az acr login --name ${{ env.ACR_NAME }}
+
+      # STEG 3: Satt upp Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # STEG 4: Bygg och pusha Core API
+      - name: Build and push Core API
+        run: |
+          docker build \
+            -t ${{ env.ACR_SERVER }}/lianer-core-api:latest \
+            -t ${{ env.ACR_SERVER }}/lianer-core-api:${{ github.sha }} \
+            -f Lianer.Core.API/Dockerfile \
+            .
+          docker push ${{ env.ACR_SERVER }}/lianer-core-api:latest
+          docker push ${{ env.ACR_SERVER }}/lianer-core-api:${{ github.sha }}
+
+      # STEG 5: Bygg och pusha Features API
+      - name: Build and push Features API
+        run: |
+          docker build \
+            -t ${{ env.ACR_SERVER }}/lianer-features-api:latest \
+            -t ${{ env.ACR_SERVER }}/lianer-features-api:${{ github.sha }} \
+            -f Lianer.Features.API/Dockerfile \
+            .
+          docker push ${{ env.ACR_SERVER }}/lianer-features-api:latest
+          docker push ${{ env.ACR_SERVER }}/lianer-features-api:${{ github.sha }}
+
+      # STEG 6: Uppdatera Core API med ny image
+      - name: Deploy Core API
+        run: |
+          az containerapp update \
+            --name ${{ env.CORE_API_APP }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ env.ACR_SERVER }}/lianer-core-api:${{ github.sha }}
+          echo "Core API uppdaterad -> ${{ github.sha }}"
+
+      # STEG 7: Uppdatera Features API med ny image
+      - name: Deploy Features API
+        run: |
+          az containerapp update \
+            --name ${{ env.FEATURES_API_APP }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ env.ACR_SERVER }}/lianer-features-api:${{ github.sha }}
+          echo "Features API uppdaterad -> ${{ github.sha }}"
+
+      # STEG 8: Verifiera att apparna kors
+      - name: Verify deployments
+        run: |
+          echo "LIANER Container Apps status:"
+          az containerapp list \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "[].{Name:name, Status:properties.runningStatus, URL:properties.configuration.ingress.fqdn}" \
+            --output table
