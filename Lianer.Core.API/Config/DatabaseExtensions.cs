@@ -7,11 +7,19 @@ public static class DatabaseExtensions
 {
 
     private const string DatabaseName = "LianerDb";
+    private const string TestDatabaseName = "TestDatabase";
     // Database (EF Core InMemory)
-    public static IServiceCollection SetupInMemoryDb(this IServiceCollection services)
+    public static IServiceCollection SetupInMemoryDb(this IServiceCollection services,IWebHostEnvironment environment)
     {
+
+        var databaseName = environment.IsEnvironment("Development")
+            ? TestDatabaseName
+            : DatabaseName;
+        Console.BackgroundColor = ConsoleColor.Black;
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine($"Running in: {environment.EnvironmentName}. Database running: {databaseName}");
         services.AddDbContext<AppDbContext>(options =>
-                options.UseInMemoryDatabase(DatabaseName));
+                options.UseInMemoryDatabase(databaseName));
         return services;
     }
     public static void InitDatabase(this WebApplication app)
@@ -22,5 +30,6 @@ public static class DatabaseExtensions
         db.Database.EnsureCreated();
     }
     
+
 }
 

@@ -11,7 +11,7 @@ namespace Lianer.Core.API
             builder.SetupAzureKeyVault();
             builder.Services.AddMemoryCache();
             builder.Services
-            .SetupInMemoryDb() 
+            .SetupInMemoryDb(builder.Environment) 
             .SetupServices() 
             .SetupRepositories() 
             .SetupGoogleAuth() 
