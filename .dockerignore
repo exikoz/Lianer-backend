@@ -1,0 +1,20 @@
+# Exclude build outputs
+bin/
+obj/
+out/
+**/bin/
+**/obj/
+
+# Exclude source control and IDE files
+.git/
+.github/
+.vs/
+.vscode/
+.obsidian/
+*.user
+
+# Exclude local settings and secrets
+appsettings.Development.json
+secrets.json
+PLAN/
+docs/

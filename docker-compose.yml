@@ -1,0 +1,53 @@
+services:
+  lianer-core-api:
+    image: lianer-core-api
+    build:
+      context: .
+      dockerfile: Lianer.Core.API/Dockerfile
+    container_name: lianer-core-api
+    ports:
+      - "5000:8080" # Map host port 5000 to container port 8080
+    networks:
+      - lianer-network
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+
+  lianer-features-api:
+    image: lianer-features-api
+    build:
+      context: .
+      dockerfile: Lianer.Features.API/Dockerfile
+    container_name: lianer-features-api
+    ports:
+      - "5001:8080" # Map host port 5001 to container port 8080
+    networks:
+      - lianer-network
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      # Use internal Docker container name and port for inter-service communication
+      - Services__CoreApiUrl=http://lianer-core-api:8080/
+      # Fulfill local config check for Hunter.io API Client
+      - Hunter__ApiKey=mock_hunter_api_key_for_local_testing
+    depends_on:
+      - lianer-core-api
+
+  lianer-frontend:
+    image: lianer-frontend
+    container_name: lianer-frontend
+    build:
+      # NOTE: During local team tests, you can change this context path to your cloned 
+      # frontend repository (e.g., '../Lianer-frontend') to run your actual application.
+      # Peka på din riktiga frontend-mapp istället för drafts
+      context: "../Documents/Projekt inlämning/K3 Project i team APP"
+      dockerfile: Dockerfile
+    ports:
+      - "3000:8080" # Map host port 3000 to Nginx container port 8080
+    networks:
+      - lianer-network
+    depends_on:
+      - lianer-core-api
+      - lianer-features-api
+
+networks:
+  lianer-network:
+    driver: bridge
