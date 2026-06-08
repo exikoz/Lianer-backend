@@ -1,3 +1,4 @@
+using Lianer.Core.API.App.Services.Agent;
 using Lianer.Core.API.Filters;
 using Lianer.Core.API.Services;
 
@@ -15,6 +16,11 @@ public static class AppExtensions
         services.AddScoped<INoteService, NoteService>();
         services.AddScoped<INoteQueryService, NoteQueryService>();
         services.AddScoped<IContactService, ContactService>();
+
+        // AI Agent (Epic 7)
+        services.AddScoped<IGeminiService, GeminiService>();
+        services.AddScoped<IAgentExecutor, AgentExecutor>();
+
         return services;
     }
 

@@ -6,24 +6,40 @@ Scalar Docs: `http://localhost:5297/scalar/v1` / `http://localhost:5266/scalar/v
 
 ---
 
-## 1. Registrera en användare (Core API)
+## 1. Registrera användare (Core API)
 
 **POST** `http://localhost:5297/api/v1/users`
 
 ```json
 {
-  "fullName": "Demo Testsson",
-  "email": "demo@example.com",
+  "fullName": "Anna Svensson",
+  "email": "anna@lianer.se",
   "password": "Secure@Password1"
 }
 ```
 
-Förväntat svar: `201 Created`
+```json
+{
+  "fullName": "Erik Johansson",
+  "email": "erik@lianer.se",
+  "password": "Secure@Password1"
+}
+```
+
+```json
+{
+  "fullName": "Sara Lindberg",
+  "email": "sara@lianer.se",
+  "password": "Secure@Password1"
+}
+```
+
+Förväntat svar: `201 Created` för varje
 ```json
 {
   "userId": "...",
-  "fullName": "Demo Testsson",
-  "email": "demo@example.com",
+  "fullName": "Anna Svensson",
+  "email": "anna@lianer.se",
   "createdAt": "..."
 }
 ```
@@ -36,7 +52,7 @@ Förväntat svar: `201 Created`
 
 ```json
 {
-  "email": "demo@example.com",
+  "email": "anna@lianer.se",
   "password": "Secure@Password1"
 }
 ```
@@ -178,17 +194,33 @@ Testa sortering: `http://localhost:5266/api/v1/leads?sortBy=name&sortOrder=asc`
 
 ---
 
-## 11. Microservice-kommunikation — lead details (Features API)
+## 11. Tilldela en lead till en användare (Features API, kräver JWT)
 
-**GET** `http://localhost:5266/api/v1/leads/{leadId}/details`
+**PATCH** `http://localhost:5266/api/v1/leads/{leadId}/assign`
 
-Använd ett leadId från steg 10. Features API anropar Core API internt för att hämta användarnamn.
+Kräver inloggning. Använd ett leadId från steg 10 och ett userId från steg 1.
 
-Förväntat: `200 OK` med lead + assignedToName.
+```json
+{
+  "userId": "{userId}"
+}
+```
+
+Förväntat: `200 OK` — Features API verifierar användaren mot Core API innan tilldelning.
 
 ---
 
-## 12. Rate Limiting — testa överbelastning
+## 12. Microservice-kommunikation — lead details (Features API)
+
+**GET** `http://localhost:5266/api/v1/leads/{leadId}/details`
+
+Använd samma leadId som steg 11. Features API anropar Core API internt för att hämta användarnamn.
+
+Förväntat: `200 OK` med lead + `assignedToName` (visar användarens namn från Core API).
+
+---
+
+## 13. Rate Limiting — testa överbelastning
 
 Skicka samma GET-request snabbt 100+ gånger.
 
@@ -196,7 +228,7 @@ Förväntat: `429 Too Many Requests` efter 100 anrop inom 1 minut.
 
 ---
 
-## 13. Felhantering — ProblemDetails (båda API:er)
+## 14. Felhantering — ProblemDetails (båda API:er)
 
 Hämta en användare som inte finns:
 
@@ -216,7 +248,7 @@ Förväntat: `404 Not Found` med RFC 7807 ProblemDetails:
 
 ---
 
-## 14. Utan JWT — skyddade endpoints
+## 15. Utan JWT — skyddade endpoints
 
 Ta bort token från BearerAuth-fältet i Features API Scalar (eller öppna ett nytt inkognito-fönster).
 
@@ -226,7 +258,7 @@ Förväntat: `401 Unauthorized` — visar att endpoints är skyddade utan giltig
 
 ---
 
-## 15. Kör testerna
+## 16. Kör testerna
 
 ```bash
 dotnet test --verbosity normal
