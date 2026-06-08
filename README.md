@@ -1,106 +1,295 @@
-# Lianer Backend
+# Lianer Backend 2.0
 
-A distributed ASP.NET Core 9 microservices solution featuring JWT authentication, Google OAuth2 integration, and external API communication. The backend API is ready for frontend integration.
+[English](README.md) | [Swedish](README.sv.md) | [Documentation](deployment.md) | [ADR](docs/adr/0001-choosing-azure-hosting.md) | [AI](README.md#ai-driven-feature-gemini-ai-integration) | [Frontend Live Demo](https://lianer-frontend.icybush-5ce7e353.italynorth.azurecontainerapps.io)
 
-![Build Status](https://github.com/exikoz/Lianer-backend/actions/workflows/ci.yml/badge.svg)
+A secure and distributed ASP.NET Core 9 microservices architecture built for cloud deployment. Features JWT authentication, Google OAuth2 integration, external API communication (Hunter.io & Gemini AI), and passwordless Azure Key Vault integration.
+
+**Live Application:** [Lianer Frontend App](https://lianer-frontend.icybush-5ce7e353.italynorth.azurecontainerapps.io)
+
+![Build & Test](https://github.com/exikoz/Lianer-backend/actions/workflows/pr.yml/badge.svg)
+![Deploy to Azure](https://github.com/exikoz/Lianer-backend/actions/workflows/deploy.yml/badge.svg)
 ![.NET](https://img.shields.io/badge/.NET-9.0-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+![Azure](https://img.shields.io/badge/Azure-Container%20Apps-blue?logo=microsoftazure&logoColor=white)
+![Azure Key Vault](https://img.shields.io/badge/Azure-Key%20Vault-purple?logo=microsoftazure&logoColor=white)
+![Azure Monitor](https://img.shields.io/badge/Azure-Monitor%20%2F%20App%20Insights-orange?logo=microsoftazure&logoColor=white)
+![AI](https://img.shields.io/badge/AI-Google%20Gemini-red?logo=googlegemini&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-black?logo=githubactions&logoColor=white)
 
 ---
 
 ## Table of Contents
 
+- [Deployment and System Status](#deployment-and-system-status)
 - [Architecture](#architecture)
 - [Features](#features)
 - [Getting Started](#getting-started)
 - [API Documentation](#api-documentation)
 - [Security](#security)
 - [Testing](#testing)
-- [CI/CD](#cicd)
-- [VG Implementation](#vg-implementation)
+- [CI/CD Pipeline](#cicd-pipeline)
+- [Advanced Design & Resiliency Patterns](#advanced-design--resiliency-patterns)
 - [Team](#team)
+
+---
+
+## Deployment and System Status
+
+The system is fully containerized and deployed in a unified cloud environment. Below is a comprehensive overview of how the different components of the system have been built, secured, quality-assured, and put into production. Click on each section to expand and read more:
+
+<details>
+<summary><b>Containerization & Azure Hosting (Fullstack)</b></summary>
+
+To guarantee a reproducible and consistent production environment, we have containerized our entire application stack. 
+
+#### Backend Microservices (Lianer.Core.API & Lianer.Features.API)
+The containers are managed via multi-stage Dockerfiles. To achieve the highest safety standards (defense in depth), we made the following design choices:
+- **Chiseled and Rootless Images:** We use the minimal `mcr.microsoft.com/dotnet/aspnet:9.0-noble-chiseled` as the runtime image. This contains no operating system shell (no `sh` or `bash`), no package manager, and no extra tools. This dramatically minimizes the container's attack surface, as an attacker cannot run custom commands or scripts.
+- **Non-Root User (USER app):** The applications run under the built-in non-privileged user `app` (UID 1654). Since non-root users are not allowed to listen on ports below 1024, the apps are configured to listen on port **8080**. This prevents an attacker from obtaining administrator privileges (root access) on the host machine in the event of a container vulnerability.
+
+#### Frontend Container (Nginx)
+The frontend (Vanilla JS SPA) is containerized in an unprivileged (rootless) Nginx image (`nginxinc/nginx-unprivileged:alpine`) listening on port 8080. 
+- **Architecture Decision (ADR):** Originally, we planned to use Azure Static Web Apps (SWA). However, Azure for Students accounts only support 5 specific regions, and SWA is not available in any of the approved regions in our subscription (Policy Error: `RequestDisallowedByAzure`). The solution was to redirect to a containerized frontend in Azure Container Apps (ACA), which had the added benefit of bringing the entire application stack together into the same unified ACA environment. See [ADR 0001: Choosing Azure Hosting](docs/adr/0001-choosing-azure-hosting.md).
+
+*   **For complete design details, see:** [1. Containerisering av backend-mikrotjänster (Task 1)](deployment.md#1-containerisering-av-backend-mikrotjänster-task-1) and [2. Containerisering & Molnvärdskap för Frontend (ADR)](deployment.md#2-containerisering--molnvärdskap-för-frontend-adr).
+
+<details>
+<summary><b>View Screenshots</b></summary>
+
+![Azure Container Apps Running Status](docs/images/containerapp-running-status.png)
+*Azure Container Apps running status.*
+
+![Container Apps Environment Variables](docs/images/containerapp-environment-variables.png)
+*ACA environment variables configuration.*
+</details>
+</details>
+
+<details>
+<summary><b>Secure Configuration & Key Vault</b></summary>
+
+We have eliminated the risk of leaked production keys and connection strings by completely purging source code and configuration files of secrets.
+
+#### Azure Key Vault Architecture
+- **Centralized Storage:** All secrets (JWT keys, Google OAuth secrets, and external API keys) are stored centrally in Azure Key Vault.
+- **Infrastructure as Code (Bicep):** The entire infrastructure for Key Vault is set up with Bicep-code in `infra/keyvault.bicep` and is deployed automatically via CI/CD.
+
+#### Passwordless Authentication (Managed Identity & RBAC)
+- **Passwordless Access:** The services in Azure Container Apps use an embedded identity (**Managed Identity**) to communicate with Key Vault. 
+- **Least Privilege (RBAC):** Instead of the legacy access policies, we use role-based access control (RBAC) via Bicep-code (`infra/roleAssignments.bicep`). The services are assigned the role *Key Vault Secrets User*, giving them *only* read permissions to secrets at runtime.
+- **Safe Local Fallback:** In `Program.cs`, there is try-catch logic invoking `DefaultAzureCredential()`. If the app cannot connect to Azure during startup (e.g., during offline local development), it falls back automatically to local User Secrets, enabling the development team to collaborate smoothly regardless of Azure permissions.
+
+*   **For complete security details, see:** [4. Säkerhet & Key Vault (Epic 4)](deployment.md#4-säkerhet--key-vault-epic-4).
+
+<details>
+<summary><b>View Screenshots</b></summary>
+
+![Key Vault RBAC Role Assignments](docs/images/keyvault-identity-rbac.png)
+*Key Vault RBAC role assignments.*
+
+![Key Vault Active Secrets](docs/images/api-documentation/kv-secrets-active-overview.png)
+*Azure Key Vault secrets list.*
+</details>
+</details>
+
+<details>
+<summary><b>CI/CD (Build, Test, Release)</b></summary>
+
+To guarantee system stability and traceability, all releases are driven by GitHub Actions pipelines:
+
+#### Quality Gates (pr.yml)
+Every Pull Request to `main` or `dev` is validated automatically:
+- Runs `npm ci`, linting, and Jest tests for the frontend.
+- Runs `dotnet restore`, `build`, and tests for the backend.
+- Executes a test build (`docker build`) of all Dockerfiles to ensure the container infrastructure is intact before code is allowed to merge.
+
+#### Continuous Deployment (deploy.yml)
+When code is merged into `main`, it is deployed automatically:
+- Logs in securely to Azure and Azure Container Registry (ACR) securely without storing any passwords (using OIDC Federated Credentials).
+- Builds the production images and tags them with the unique **GitHub Commit SHA** (instead of just `latest`). This provides absolute traceability from the running code in production directly to the specific code line in Git.
+- Updates the Container Apps environment (`az containerapp update`) in the Italy North region.
+
+*   **For complete pipeline details, see:** [3. CI/CD Pipeline (Epic 3)](deployment.md#3-cicd-pipeline-epic-3).
+</details>
+
+<details>
+<summary><b>Monitoring & Diagnostics</b></summary>
+
+We have established a complete monitoring and logging solution in our production environment to quickly isolate and troubleshoot issues.
+
+#### Monitoring with Application Insights
+- **Automatic Tracking:** Logs incoming HTTP requests, response times, status codes, unhandled exceptions (via our custom `ExceptionMiddleware`), and outgoing dependency calls via `HttpClient`.
+- **Distributed Tracing (Application Map):** Azure automatically maps the communication chain (Frontend ➔ Features API ➔ Core API ➔ Hunter.io). If any link in the chain is slow or failing, it shows up immediately on the map.
+
+#### Operations Runbook & KQL
+In the event of service disruptions, we troubleshoot the system using the following runbook steps:
+1. **Real-time Logs (Log Stream):** View container logs in real-time directly in Azure Portal or via CLI:
+   ```bash
+   az containerapp logs show --name lianer-core-api --resource-group rg-lianer-prod --follow
+   ```
+2. **Real-time Telemetry (Live Metrics):** Follow CPU, memory, request rates, and log streams live in Application Insights.
+3. **Log Analysis via KQL (Kusto Query Language):** Run queries in Log Analytics to identify patterns. Example queries included in the documentation:
+   * Average response time per endpoint (Performance analysis)
+   * Traffic trend (Requests per hour over the last 24 hours)
+   * Errors and failed external requests (Dependency analysis)
+
+*   **For complete runbook steps and screenshots, see:** [5. Övervakning & Felsökbarhet (Epic 5)](deployment.md#5-övervakning--felsökbarhet-epic-5).
+
+<details>
+<summary><b>View Screenshots</b></summary>
+
+![Application Insights Program Map](docs/images/application-insights-map.png)
+*Distributed Tracing program map in Application Insights.*
+
+![Application Insights Live Metrics](docs/images/application-insights-live-metrics.png)
+*Live telemetry stream in Application Insights.*
+
+![Average Duration KQL Query](docs/images/log-analytics-average-duration.png)
+*Average response time per endpoint query results.*
+
+![Request Trend KQL Query](docs/images/log-analytics-request-trend.png)
+*Traffic trend query results.*
+
+![Dependencies KQL Query](docs/images/log-analytics-dependencies.png)
+*Failed external requests dependency query.*
+</details>
+</details>
 
 ---
 
 ## Architecture
 
-### System Overview
+### System Architecture Map
 
-The project consists of two separate ASP.NET Core Web API services communicating via HTTP:
+The following map illustrates the cloud infrastructure and the request flow of the Lianer fullstack application deployed in Azure:
 
+```mermaid
+graph TD
+    classDef client fill:#e1f5fe,stroke:#0288d1,stroke-width:2px;
+    classDef aca fill:#e8f5e9,stroke:#388e3c,stroke-width:2px;
+    classDef azure fill:#ede7f6,stroke:#5e35b1,stroke-width:2px;
+    classDef ext fill:#fff3e0,stroke:#f57c00,stroke-width:2px;
+
+    Browser["User Browser"]:::client
+    Frontend["Lianer Frontend (Nginx Container)"]:::aca
+
+    subgraph Azure ["Azure Italy North - Production Environment"]
+        direction TB
+        subgraph ACA_Env ["Azure Container Apps Environment"]
+            Frontend
+            CoreAPI["Lianer.Core.API (.NET 9)"]:::aca
+            FeaturesAPI["Lianer.Features.API (.NET 9)"]:::aca
+        end
+
+        KeyVault["Azure Key Vault"]:::azure
+        AppInsights["Application Insights & Log Analytics"]:::azure
+    end
+
+    subgraph ExternalServices ["External Services"]
+        Google["Google OAuth 2.0"]:::ext
+        Hunter["Hunter.io API"]:::ext
+        Gemini["Gemini AI API"]:::ext
+    end
+
+    Browser -->|HTTPS| Frontend
+    Browser -->|HTTPS / JWT Auth| CoreAPI
+    Browser -->|HTTPS / JWT Auth| FeaturesAPI
+
+    FeaturesAPI -->|HTTP / Polly / CoreApiClient| CoreAPI
+    FeaturesAPI -->|HTTPS| Hunter
+    FeaturesAPI -->|HTTPS| Gemini
+    CoreAPI -->|HTTPS| Google
+
+    CoreAPI -.->|Managed Identity / RBAC| KeyVault
+    FeaturesAPI -.->|Managed Identity / RBAC| KeyVault
+
+    CoreAPI -.->|Telemetry / AppInsights SDK| AppInsights
+    FeaturesAPI -.->|Telemetry / AppInsights SDK| AppInsights
+    Frontend -.->|Log Streaming| AppInsights
 ```
-                    ┌──────────────────────────────────────┐
-                    │   FRONTEND (Planned)                 │
-                    │   Not yet implemented                │
-                    │   Testing via Scalar                 │
-                    └────────────┬─────────────────────────┘
-                                 │
-                                 │ HTTPS (JWT Bearer)
-                                 │
-┌────────────────────────────────▼───────────────────────────────────────┐
-│                                                                         │
-│                        MICROSERVICES LAYER                              │
-│                                                                         │
-│  ┌─────────────────────────────┐      ┌──────────────────────────────┐  │
-│  │  Lianer.Core.API            │      │  Lianer.Features.API         │  │
-│  │  Port: 5297 (HTTP)          │◄────►│  Port: 5266 (HTTP)           │  │
-│  │                             │ HTTP │                              │  │
-│  │  - User Management          │      │  - Lead Management           │  │
-│  │  - JWT Authentication       │      │  - Hunter.io Integration     │  │
-│  │  - Google OAuth2 SSO        │      │  - Enriched Data from Core   │  │
-│  │  - Session Management       │      │  - Bulk Contact Import       │  │
-│  │  - Azure Key Vault          │      │  - Polly Resilience          │  │
-│  │                             │      │                              │  │
-│  └─────────────────────────────┘      └───────────────┬──────────────┘  │
-│                                                       │                 │
-└───────────────────────────────────────────────────────┼─────────────────┘
-                                                        │
-                                                        │ HTTPS (API Key)
-                                                        │
-                                        ┌───────────────▼────────────────┐
-                                        │   Hunter.io API (External)     │
-                                        │                                │
-                                        │   - Domain Enrichment          │
-                                        │   - Email Discovery            │
-                                        │   - Company Information        │
-                                        │                                │
-                                        └────────────────────────────────┘
 
-Communication:
-- Frontend → Core API: HTTPS with JWT Bearer Token
-- Core API ↔ Features API: HTTP with Typed HttpClient + Polly (Retry/Circuit Breaker)
-- Features API → Hunter.io: HTTPS with API Key Authentication
+### Request and Resilience Flow (Flowchart)
+
+Below is the sequence flowchart demonstrating how requests flow through the system, protected by Polly resilience mechanisms and enriched with Gemini AI capabilities:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User Browser
+    participant FE as Lianer Frontend
+    participant Features as Lianer.Features.API
+    participant Core as Lianer.Core.API
+    participant Hunter as Hunter.io API
+    participant AI as Gemini AI API
+
+    User->>FE: Access App / Request Actions
+    FE-->>User: Load SPA Assets (Nginx)
+    
+    User->>Features: POST /api/v1/leads/import/{domain} (JWT Token)
+    activate Features
+    
+    Features->>Core: GET /api/v1/users/{userId} (Verify Identity)
+    Note over Features,Core: CoreApiClient under Polly protection
+    alt Core API is Healthy
+        Core-->>Features: 200 OK (User Summary)
+    else Core API is Slow / Failing
+        Note over Features,Core: Polly Retries with Exponential Backoff
+        Note over Features,Core: Circuit Breaker Opens if Failure Ratio > 50%
+        Features-->>User: 503 Service Unavailable / Fallback
+    end
+
+    Features->>Hunter: GET /v2/domain-search (Enrichment)
+    Hunter-->>Features: Return Domain Leads & Contacts
+
+    Features->>AI: Process Tasks / Generate Recommendations
+    AI-->>Features: Return AI Agent Insights (Gemini)
+
+    Features-->>User: Return Enriched Leads (JSON)
+    deactivate Features
 ```
 
-### Services
+<details>
+<summary><b>Services Details & Inter-service Communication</b></summary>
 
-**Status:** Both APIs are fully functional and tested via Scalar API documentation. Frontend integration is planned for future development.
+### Services Overview
 
-#### Lianer.Core.API
-Core functionality for user management and authentication.
+The system is split into three main components:
+1. **Lianer Frontend:** A Vanilla JavaScript single-page application packaged inside a secure, rootless Nginx container (`nginxinc/nginx-unprivileged:alpine`) running on port 8080.
+2. **Lianer.Core.API:** Core service managing user administration, session management (JWT/Google SSO), and localized database operations.
+3. **Lianer.Features.API:** Business features service executing lead enrichment via Hunter.io, bulk lead imports, and tasks management.
 
-**Endpoints:**
+#### Lianer.Core.API Endpoints:
+
+**User & Session Management:**
 - `POST /api/v1/users` - Register new user
-- `GET /api/v1/users` - List all users
-- `GET /api/v1/users/{id}` - Get specific user
+- `GET /api/v1/users` - List all users (cached)
+- `GET /api/v1/users/{id}` - Get specific user (cached)
 - `PUT /api/v1/users/{id}` - Update user profile (requires authentication)
 - `DELETE /api/v1/users/{id}` - Delete user (own account only, requires authentication)
 - `POST /api/v1/sessions` - Traditional login (email/password)
 - `POST /api/v1/sessions/google` - Google OAuth2 login
 - `GET /api/v1/sessions/google/url` - Get Google authorization URL
 
-**Technologies:**
-- ASP.NET Core 9.0
-- Entity Framework Core (InMemory Database)
-- JWT Bearer Authentication
-- BCrypt.Net for password hashing
-- Azure Key Vault for secrets
-- Polly for resilience patterns
+**Contacts Management (requires authentication):**
+- `GET /api/v1/contacts/{id}` - Get contact by ID
+- `POST /api/v1/contacts` - Create new contact
+- `PUT /api/v1/contacts/{id}` - Update existing contact
+- `DELETE /api/v1/contacts/{id}` - Delete contact
 
-#### Lianer.Features.API
-Business features and external API integration.
+**Activities Management (requires authentication):**
+- `GET /api/v1/activities` - List all activities paginated
+- `GET /api/v1/activities/{id}` - Get specific activity by ID
+- `GET /api/v1/activities/user/{id}` - List activities for a specific user
+- `POST /api/v1/activities` - Create new activity
+- `PUT /api/v1/activities` - Update existing activity
+- `DELETE /api/v1/activities/{id}` - Delete activity
 
-**Endpoints:**
+**Activity Notes Management (requires authentication):**
+- `GET /api/v1/activities/{activityId}/notes` - List notes for an activity paginated
+- `GET /api/v1/activities/{activityId}/notes/{noteId}` - Get specific note
+- `POST /api/v1/activities/{activityId}/notes` - Create note for an activity
+- `PUT /api/v1/activities/{activityId}/notes/{noteId}` - Update note
+- `DELETE /api/v1/activities/{activityId}/notes/{noteId}` - Delete note
+
+#### Lianer.Features.API Endpoints:
 - `GET /api/v1/leads` - List all leads (enriched with usernames)
 - `GET /api/v1/leads/{id}/details` - Get lead details
 - `GET /api/v1/leads/enrich/{domain}` - Enrich domain via Hunter.io
@@ -108,17 +297,9 @@ Business features and external API integration.
 - `PATCH /api/v1/leads/{leadId}/assign` - Assign lead to user (requires authentication)
 - `POST /api/v1/leads/prepare-test` - Prepare test data (requires authentication)
 
-**Technologies:**
-- ASP.NET Core 9.0
-- Entity Framework Core (InMemory Database)
-- Typed HttpClient for service-to-service communication
-- Polly Standard Resilience Handler (Retry + Circuit Breaker)
-- Hunter.io API integration
-
 ### Inter-service Communication
 
 **CoreApiClient (Features API → Core API):**
-
 ```csharp
 public class CoreApiClient
 {
@@ -158,12 +339,20 @@ builder.Services.AddHttpClient<CoreApiClient>(client =>
 });
 ```
 
+<details>
+<summary><b>View Screenshot</b></summary>
+
 ![Microservices Communication](docs/images/api-documentation/k-126-microservices-terminal-handshake.png)
 *Terminal output showing successful communication between Core API and Features API.*
+</details>
+</details>
 
 ---
 
 ## Features
+
+<details>
+<summary><b>Technical Features List</b></summary>
 
 ### RESTful API Design
 - Plural nouns for all URLs (`/api/v1/users`, `/api/v1/leads`)
@@ -190,10 +379,12 @@ builder.Services.AddHttpClient<CoreApiClient>(client =>
 - Advanced filtering via query parameters
 
 ### External API Integration
-- Hunter.io Typed Client for domain enrichment
-- Secure API Key authentication
-- Error handling with `EnsureSuccessStatusCode()`
-- Polly Standard Resilience Handler
+- **Hunter.io API**: Integrates via a Typed Client with Polly resilience to search domains and enrich lead details in Features API.
+- **Google OAuth 2.0 API**: Used in Core API to authorize users via Google Single Sign-On (SSO).
+- **Google Gemini AI API**: Integrates with Features API to run AI categorization, lead/task insights, and recommendations.
+- Secure API key and client secret management using Azure Key Vault (production) and User Secrets (development).
+- Integrated error handling with `EnsureSuccessStatusCode()` and custom exception middleware.
+- Built-in API resiliency using the Polly Standard Resilience Handler (retries, backoff with jitter, circuit breaker).
 
 ### Testing
 - Unit tests with xUnit and Moq
@@ -206,12 +397,20 @@ builder.Services.AddHttpClient<CoreApiClient>(client =>
 - XML comments on all endpoints
 - OAuth2 security scheme in OpenAPI
 
+<details>
+<summary><b>View Screenshot</b></summary>
+
 ![API Documentation](docs/images/api-documentation/leads-import-scalar-test.png)
 *Scalar API documentation for bulk lead import.*
+</details>
+</details>
 
 ---
 
 ## Getting Started
+
+<details>
+<summary><b>Setup, Installation & Running Guide</b></summary>
 
 ### Prerequisites
 
@@ -301,10 +500,14 @@ dotnet run --launch-profile https
 |---------|------|-------|
 | Core API | 5297 | 7115 |
 | Features API | 5266 | 7089 |
+</details>
 
 ---
 
 ## API Documentation
+
+<details>
+<summary><b>Scalar API Details & Verification</b></summary>
 
 Both services feature interactive API documentation via Scalar (Development mode only). Since the frontend is not yet implemented, Scalar is used to test and demonstrate all endpoints.
 
@@ -318,11 +521,15 @@ Both services feature interactive API documentation via Scalar (Development mode
 - XML comments for all endpoints
 - Complete API specification for future frontend integration
 
+<details>
+<summary><b>View Screenshots</b></summary>
+
 ![Google SSO Testing](docs/images/api-documentation/google-sso-endpoint-test1.png)
 *Google OAuth2 endpoint testing in Scalar.*
 
 ![Core API User Creation](docs/images/api-documentation/core-api-user-created-success.png)
 *Successful registration of a new user in Core API.*
+</details>
 
 ### Features API
 **URL:** `https://localhost:5298/scalar/v1`
@@ -333,15 +540,23 @@ Both services feature interactive API documentation via Scalar (Development mode
 - Hunter.io domain search
 - Complete API specification for future frontend integration
 
+<details>
+<summary><b>View Screenshots</b></summary>
+
 ![Enriched Leads](docs/images/api-documentation/k-126-final-enriched-leads-list.png)
 *Enriched lead list with usernames from Core API.*
 
 ![Lead Import Success](docs/images/api-documentation/leads-import-sogeti-success.png)
 *Successful import and enrichment of leads from Hunter.io in Features API.*
+</details>
+</details>
 
 ---
 
 ## Security
+
+<details>
+<summary><b>Authentication, SSO, CORS & Key Vault Details</b></summary>
 
 ### Authentication
 
@@ -354,11 +569,15 @@ Both services feature interactive API documentation via Scalar (Development mode
 4. Client (Scalar/Postman/future frontend) sends the token in the `Authorization: Bearer {token}` header
 5. Backend validates the token on protected endpoints
 
+<details>
+<summary><b>View Screenshots</b></summary>
+
 ![Scalar Bearer Auth](docs/images/api-documentation/auth-bearer_token_Core.png)
 *Configuring BearerAuth (JWT) directly in Scalar for Core API.*
 
 ![Password Validation Test](docs/images/api-documentation/core-api-password-validation-test.png)
 *Verification of password validation and error handling (401 Unauthorized).*
+</details>
 
 **Current Testing:** Use Scalar API documentation to test the authentication flow.
 
@@ -393,8 +612,12 @@ Both services feature interactive API documentation via Scalar (Development mode
 
 **Current Testing:** Use Scalar API documentation to test the Google SSO flow.
 
+<details>
+<summary><b>View Screenshot</b></summary>
+
 ![Google SSO Flow](docs/images/api-documentation/SSO1.png)
 *Google OAuth2 authorization flow.*
+</details>
 
 **Auto-registration:**
 - A Google user's first login automatically creates an account
@@ -407,7 +630,7 @@ Both services feature interactive API documentation via Scalar (Development mode
 ```csharp
 public class RegisterRequestDto
 {
-    [Required(ErrorMessage = "Full name is required")]
+    [Required(ErrorMessage = "FullName is required")]
     [StringLength(100, MinimumLength = 2)]
     public string FullName { get; set; }
 
@@ -474,23 +697,31 @@ app.MapControllers().RequireRateLimiting("fixed");
 
 **Result:** Maximum 100 requests per minute per client, thereafter `429 Too Many Requests`.
 
-### Azure Key Vault
+### Azure Key Vault & Secrets Management
 
-**Production:**
-- All secrets are fetched from Azure Key Vault at startup
-- DefaultAzureCredential for authentication (Managed Identity)
-- VaultUri: `https://kv-lianer-dev.vault.azure.net/`
+To guarantee high security in production, all credentials and API keys are completely removed from source code and configurations:
+- **Azure Key Vault Integration:** In production, secrets are fetched dynamically on application startup from the centralized Azure Key Vault.
+- **Managed Identities & RBAC:** Access to Key Vault secrets is secured using Azure RBAC. The container apps are assigned a User-Assigned Managed Identity, which is granted the *Key Vault Secrets User* role. No passwords or client secrets are stored in the code.
+- **Local Fallback:** If the app cannot connect to Azure at startup (e.g., during offline local development), it falls back gracefully to local User Secrets.
+
+<details>
+<summary><b>View Screenshot</b></summary>
 
 ![Azure Key Vault](docs/images/api-documentation/kv-secrets-active-overview.png)
 *Azure Key Vault secrets overview.*
+</details>
 
 **Development:**
 - User Secrets for local development
 - Fallback mechanism only for tests
+</details>
 
 ---
 
 ## Testing
+
+<details>
+<summary><b>Testing Suite (Unit, Integration & DI Validation)</b></summary>
 
 ### Unit Tests
 
@@ -582,48 +813,34 @@ builder.Host.UseDefaultServiceProvider(options =>
     options.ValidateOnBuild = true;     // Prevents missing registrations
 });
 ```
+</details>
 
 ---
 
-## CI/CD
+## CI/CD Pipeline
 
-### GitHub Actions
+<details>
+<summary><b>CI/CD Pipeline Architecture & Deployment</b></summary>
 
-**Pipeline:** `.github/workflows/ci.yml`
+We have automated the building, testing, and deployment of the entire fullstack system using GitHub Actions:
 
-**Steps:**
-1. Checkout code
-2. Setup .NET 9.0
-3. Restore dependencies
-4. Build solution
-5. Run all tests
-6. Publish test results
+### 1. Pull Request Validation (`pr.yml`)
+- Triggers on any PR against `main` or `dev`.
+- Restores dependencies, runs unit and integration tests, and executes a dry-run Docker build on all Dockerfiles (Nginx Frontend, Core API, Features API) to verify that the containerization builds without errors.
 
-**Triggers:**
-- Push to `main` or `dev`
-- Pull requests against `main`
-
-**Badge:**
-![Build Status](https://github.com/exikoz/Lianer-backend/actions/workflows/ci.yml/badge.svg)
-
-### Branch Strategy
-
-- `main` - Production code (protected, requires PR + review)
-- `dev` - Development branch
-- `feature/*` - Feature branches
-- `bugfix/*` - Bugfix branches
-
-**Pull Request Process:**
-1. Create feature branch from `dev`
-2. Implement functionality
-3. Create PR against `dev`
-4. Minimum one team member review
-5. CI/CD pipeline must be green
-6. Merge after approval
+### 2. Continuous Deployment (`deploy.yml`)
+- Triggers on merges to `main`.
+- Logs into Azure Container Registry (ACR) using passwordless OpenID Connect (OIDC) Federated Credentials.
+- Builds production-ready Docker images, tags them with the unique **GitHub Commit SHA** (ensuring absolute spårbarhet/traceability), and pushes them to ACR.
+- Automatically instructs Azure Container Apps to update and deploy the new revisions in Italy North.
+</details>
 
 ---
 
-## VG Implementation
+## Advanced Design & Resiliency Patterns
+
+<details>
+<summary><b>Advanced Backend Features (Exception Handling, Polly Policies & Caching)</b></summary>
 
 ### 1. Custom Exception Middleware
 
@@ -753,10 +970,14 @@ builder.Services.AddHttpClient("GoogleAuth", client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 ```
+</details>
 
 ---
 
 ## Surgical Test Flow (End-to-End)
+
+<details>
+<summary><b>Surgical Test Flow Phases</b></summary>
 
 Follow these steps to verify the entire system's functionality (Security, Integration & Caching).
 
@@ -792,7 +1013,7 @@ Follow these steps to verify the entire system's functionality (Security, Integr
 4.  **Authorize**
     *   Click **Authorize** and paste the **same** token you received from Core API.
 
-5.  **Import Leads (Protected 🔒)**
+5.  **Import Leads (Protected)**
     *   **Endpoint**: `POST /api/v1/leads/import/microsoft.com`
     *   **Goal**: Verify you receive `200 OK` and leads are imported from Hunter.io.
 
@@ -800,7 +1021,7 @@ Follow these steps to verify the entire system's functionality (Security, Integr
     *   **Endpoint**: `GET /api/v1/leads` (Open)
     *   **Goal**: Copy an `id` from the list.
 
-7.  **Assign Lead (Protected 🔒)**
+7.  **Assign Lead (Protected)**
     *   **Endpoint**: `PATCH /api/v1/leads/{leadId}/assign`
     *   **Body**:
         ```json
@@ -826,6 +1047,36 @@ Follow these steps to verify the entire system's functionality (Security, Integr
     *   Change your name in Core API (`PUT /api/v1/users/{userId}`).
     *   Go back to Features API and fetch leads again.
     *   **Result**: The cache should have been cleared automatically, and the new name should appear immediately.
+</details>
+
+---
+
+## Observability & Monitoring
+
+<details>
+<summary><b>Observability & Monitoring Details</b></summary>
+
+We have integrated full observability into the production environment:
+- **Application Insights & Log Analytics:** Both API backends automatically stream incoming HTTP requests, latencies, exceptions, and dependency calls to Azure Log Analytics.
+- **Operations Runbook:** A complete runbook and KQL (Kusto Query Language) template library are documented in [deployment.md](deployment.md) to enable rapid troubleshooting via Live Metrics, Log Streams, and Transaction Search.
+- **Screenshots & Telemetry Evidence:** The [docs/images/](file:///c:/Users/D/Lianer-backend/docs/images) folder contains screenshots proving our telemetry works end-to-end, including:
+  - `application-insights-map.png` (Distributed Tracing program map)
+  - `application-insights-live-metrics.png` (Live telemetry stream)
+  - KQL query results for endpoint latencies, requests trend, and external dependencies.
+</details>
+
+---
+
+## AI-Driven Feature (Gemini AI Integration)
+
+<details>
+<summary><b>AI-Driven Feature Details (Gemini AI)</b></summary>
+
+The Lianer application integrates a secure, backend-driven AI feature utilizing the Gemini AI API:
+- **Gemini Agent Integration:** A server-side AI agent helps users manage, retrieve, and automatically categorize tasks/leads.
+- **Secure Key Management:** The API key for Gemini is stored securely in Azure Key Vault and injected on startup.
+- **UX Resiliency:** Includes fallback mechanisms to ensure a smooth user experience even if the external AI service rate-limits or fails.
+</details>
 
 ---
 
@@ -833,9 +1084,9 @@ Follow these steps to verify the entire system's functionality (Security, Integr
 
 **API Architects - .NET Team Malmö**
 
-- [Joco Borghol](https://github.com/JocoBorghol) - Backend Developer
-- [Alexander Jansson](https://github.com/alexanderjson) - Backend Developer
-- [Hussein Hasnawy](https://github.com/exikoz) - Backend Developer
+- [Joco Borghol](https://github.com/JocoBorghol) - Fullstack Developer
+- [Alexander Jansson](https://github.com/alexanderjson) - Fullstack Developer
+- [Hussein Hasnawy](https://github.com/exikoz) - Fullstack Developer
 
 ---
 
@@ -848,6 +1099,9 @@ For questions or feedback, contact the team via GitHub Issues or create a Pull R
 ---
 
 ## Technical Verification (Logs)
+
+<details>
+<summary><b>System Logs & Verification</b></summary>
 
 Here are actual logs from the system verifying that critical functions are active:
 
@@ -879,5 +1133,4 @@ fail: Unhandled exception caught by middleware. Status: 401, Path: /api/v1/sessi
 info: User authenticated successfully: 17c98dcb-9e66-4d3b-9eea-2508d7270839
 info: JWT token generated for user: 17c98dcb-9e66-4d3b-9eea-2508d7270839
 ```
-
----
+</details>
