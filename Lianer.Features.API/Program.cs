@@ -17,6 +17,7 @@ using Lianer.Features.API.Data;
 using Lianer.Features.API.Filters;
 using Lianer.Features.API.Middleware;
 using Lianer.Features.API.Services;
+using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 
 namespace Lianer.Features.API
 {
@@ -39,6 +40,20 @@ namespace Lianer.Features.API
                 {
                     Console.WriteLine($"Features API: Key Vault connection failed. Falling back to local secrets. (Error: {ex.Message})");
                 }
+            }
+
+            // --- Application Insights Telemetry ---
+            var telemetryConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+            if (!string.IsNullOrEmpty(telemetryConnectionString))
+            {
+                builder.Services.AddApplicationInsightsTelemetry(new ApplicationInsightsServiceOptions
+                {
+                    ConnectionString = telemetryConnectionString
+                });
+            }
+            else
+            {
+                Console.WriteLine("Features API Telemetry: APPLICATIONINSIGHTS_CONNECTION_STRING is missing. Telemetry is disabled.");
             }
 
             // --- Caching Support (K-128) ---

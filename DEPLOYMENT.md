@@ -97,6 +97,8 @@ För att garantera högsta möjliga säkerhet för applikationerna har vi implem
 2. **Managed Identities (Lösenordsfri åtkomst):** Vi har skapat `infra/roleAssignments.bicep` som använder Azure RBAC för att tilldela rollen *Key Vault Secrets User* till våra mikrotjänster. Detta ger tjänsterna automatisk åtkomst i Azure.
 3. **Azure SDK Integration:** I `Program.cs` för både Core och Features API använder vi paketet `Azure.Identity`. Genom att anropa `DefaultAzureCredential()` hämtar .NET-koden automatiskt in rättigheter baserat på miljön den körs i, och kan tanka ner hemligheter från Key Vaultet helt transparent.
 
+![Key Vault RBAC Rolltilldelningar](docs/images/keyvault-identity-rbac.png)
+
 ### Varför vi gjorde det (ADR & VG-krav)
 - **Infrastructure-as-Code och Bicep RBAC:** Vi valde aktivt att inte bygga infrastrukturen med manuella skript, utan att från start använda **Azure RBAC via Bicep** (`enableRbacAuthorization: true`). Detta ger en mer modern "Zero Trust"-modell, full spårbarhet via Git och minimerar manuella fel jämfört med den äldre "Access Policies"-metoden. Våra Container Apps får *enbart* läsrättigheter till hemligheterna (rollen *Key Vault Secrets User*).
 - **Workaround för Azure for Students (Enhetlig Resursgrupp):** På grund av hårda begränsningar ("Policy Error") och spärrar i skolkontots prenumeration (t.ex. inga ACR Tasks, och inga Static Web Apps i den tillåtna regionen Italy North) tvingades vi strukturera om infrastrukturen. Lösningen blev att samla hela systemet (frontend, backend och Key Vault) under ett och samma tak i en existerande Resource Group i Italy North. Genom att köra allt som Azure Container Apps kan vi bygga containrarna via GitHub Actions istället. Teamkollegorna har fått riktad åtkomst till denna resursgrupp, och varje enskild container har tilldelats exakt de behörigheter den behöver (Managed Identity) för att allt ska kunna köras och samarbetas kring smidigt trots skolkontots begränsningar.
@@ -106,13 +108,76 @@ För att garantera högsta möjliga säkerhet för applikationerna har vi implem
 </details>
 
 <details>
-<summary><b>5. Övervakning & Felsökbarhet (Epic 5) - <i>[Kommande]</i></b></summary>
+<summary><b>5. Övervakning & Felsökbarhet (Epic 5)</b></summary>
 
 ### Vad som har gjorts
-- *[Fyll i hur Application Insights eller Log Analytics är konfigurerat]*
+Vi har implementerat en komplett övervaknings- och spårbarhetslösning (Observability) för vår distribuerade fullstack-miljö:
+1. **Application Insights SDK Integration:** Installerat `Microsoft.ApplicationInsights.AspNetCore` i både `Lianer.Core.API` och `Lianer.Features.API`. Tjänsterna har konfigurerats att automatiskt ansluta till Azure via miljövariabeln `APPLICATIONINSIGHTS_CONNECTION_STRING`.
+2. **Resilient Lokal Fallback:** Om ingen anslutningssträng hittas (t.ex. under lokal utveckling) inaktiveras telemetriinsamlingen graciöst utan att applikationerna kraschar eller slänger fel.
+3. **Log Analytics & Azure-koppling:** Skapat ett Log Analytics-valv i Azure-portalen under resursgruppen `rg-lianer-prod` och anslutit containrarna dit.
+
+![Container App Miljövariabler](docs/images/containerapp-environment-variables.png)
+
+![Container App Running Status](docs/images/containerapp-running-status.png)
 
 ### Varför vi gjorde det (ADR & VG-krav)
-- **Observability på riktigt (VG):** *[Visa hur ni mäter/spårar en hel request-kedja (från frontend till backend). Lägg in en kort runbook/instruktion här för hur man felsöker en kraschande applikation.]*
+- **Strukturerad felsökning (G):** Genom att slussa alla `ILogger.LogError`-anrop från vår `ExceptionMiddleware` till Application Insights, sparas alla unhandled exceptions automatiskt som rika felobjekt med fullständiga stack traces under kategorin *Exceptions* istället för som ostrukturerade textloggar.
+- **Distribuerad spårning / Distributed Tracing (VG):** Application Insights SDK spårar automatiskt alla inkommande HTTP-förfrågningar (rutter, svarstider, statuskoder) samt alla utgående beroendeanrop (dependency calls) via `HttpClient`. Detta innebär att när frontenden anropar Features API, som i sin tur gör anrop till Core API och det externa Hunter.io API:et, ritas hela denna kedja upp automatiskt i **Application Map** i Azure. Detta gör att vi kan identifiera exakt var i kedjan en fördröjning eller ett fel uppstår.
+
+![Application Insights Programkarta](docs/images/application-insights-map-vg.png)
+
+---
+
+### Operations Runbook - Felsökning i produktion
+
+Om en deploy misslyckas eller om applikationen kraschar i produktion, följ dessa steg för att lokalisera felet:
+
+#### Steg 1: Kontrollera loggströmmen (Log Stream)
+För att se realtidsloggar direkt från API-containrarna:
+- **Via Azure-portalen:** Gå till din Container App (t.ex. `lianer-core-api`), klicka på **Log Stream** under sektionen *Monitoring* i sidomenyn.
+- **Via Azure CLI:** Kör följande kommando i terminalen:
+  ```bash
+  az containerapp logs show \
+    --name lianer-core-api \
+    --resource-group rg-lianer-prod \
+    --follow
+  ```
+
+#### Steg 2: Sök i Application Insights (Transaction Search)
+Om en användare rapporterar ett specifikt fel (t.ex. med ett `traceId` från det strukturerade felmeddelandet):
+1. Gå till din **Application Insights**-resurs i Azure-portalen.
+2. Klicka på **Transaction Search** i sidomenyn.
+3. Klistra in `traceId` eller sök på t.ex. statuskod `500` för att se den exakta transaktionskedjan och tillhörande felmeddelande med stack-trace.
+
+#### Steg 3: Analysera med KQL (Kusto Query Language)
+Klicka på **Logs** under din Application Insights eller ditt Log Analytics Workspace för att köra anpassade frågor. Här är teamets standardfrågor:
+
+![Log Analytics KQL Queries](docs/images/log-analytics-kql-queries.png)
+
+* **Hitta de 20 senaste misslyckade anropen (Requests):**
+  ```kql
+  requests
+  | where success == false
+  | project timestamp, name, resultCode, duration, url
+  | order by timestamp desc
+  | limit 20
+  ```
+
+* **Hitta de 20 senaste undantagen (Exceptions) med felmeddelande och fil:**
+  ```kql
+  exceptions
+  | project timestamp, problemId, outerMessage, type, method
+  | order by timestamp desc
+  | limit 20
+  ```
+
+* **Spåra externa API-anrop (t.ex. till Hunter.io eller internt Core API):**
+  ```kql
+  dependencies
+  | project timestamp, name, type, duration, success, resultCode
+  | order by timestamp desc
+  | limit 20
+  ```
 
 </details>
 
