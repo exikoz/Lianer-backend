@@ -123,8 +123,7 @@ Vi har implementerat en komplett övervaknings- och spårbarhetslösning (Observ
 ### Varför vi gjorde det (ADR & VG-krav)
 - **Strukturerad felsökning (G):** Genom att slussa alla `ILogger.LogError`-anrop från vår `ExceptionMiddleware` till Application Insights, sparas alla unhandled exceptions automatiskt som rika felobjekt med fullständiga stack traces under kategorin *Exceptions* istället för som ostrukturerade textloggar.
 - **Distribuerad spårning / Distributed Tracing (VG):** Application Insights SDK spårar automatiskt alla inkommande HTTP-förfrågningar (rutter, svarstider, statuskoder) samt alla utgående beroendeanrop (dependency calls) via `HttpClient`. Detta innebär att när frontenden anropar Features API, som i sin tur gör anrop till Core API och det externa Hunter.io API:et, ritas hela denna kedja upp automatiskt i **Application Map** i Azure. Detta gör att vi kan identifiera exakt var i kedjan en fördröjning eller ett fel uppstår.
-
-![Application Insights Programkarta](docs/images/application-insights-map-vg.png)
+![Application Insights Programkarta](docs/images/application-insights-map.png)
 
 ---
 
@@ -132,10 +131,14 @@ Vi har implementerat en komplett övervaknings- och spårbarhetslösning (Observ
 
 Om en deploy misslyckas eller om applikationen kraschar i produktion, följ dessa steg för att lokalisera felet:
 
-#### Steg 1: Kontrollera loggströmmen (Log Stream)
-För att se realtidsloggar direkt från API-containrarna:
-- **Via Azure-portalen:** Gå till din Container App (t.ex. `lianer-core-api`), klicka på **Log Stream** under sektionen *Monitoring* i sidomenyn.
-- **Via Azure CLI:** Kör följande kommando i terminalen:
+#### Steg 1: Kontrollera loggströmmen (Log Stream) och Live Metrics
+För att se realtidsloggar direkt från API-containrarna eller analysera prestandadata i realtid:
+- **Via Azure-portalen (Log Stream):** Gå till din Container App (t.ex. `lianer-core-api`), klicka på **Log Stream** under sektionen *Monitoring* i sidomenyn.
+- **Via Application Insights (Live Metrics):** Öppna din Application Insights-resurs i portalen och klicka på **Live Metrics** under sektionen *Undersök* (Investigate) i sidomenyn. Här ser du realtidsprestanda, CPU/minnesanvändning samt en live-ström av loggar och exceptions från samtliga servrar/instanser som är online.
+
+![Application Insights Live Metrics](docs/images/application-insights-live-metrics.png)
+
+- **Via Azure CLI (Log Stream):** Kör följande kommando i terminalen för att strömma loggar:
   ```bash
   az containerapp logs show \
     --name lianer-core-api \
@@ -152,8 +155,6 @@ Om en användare rapporterar ett specifikt fel (t.ex. med ett `traceId` från de
 #### Steg 3: Analysera med KQL (Kusto Query Language)
 Klicka på **Logs** under din Application Insights eller ditt Log Analytics Workspace för att köra anpassade frågor. Här är teamets standardfrågor:
 
-![Log Analytics KQL Queries](docs/images/log-analytics-kql-queries.png)
-
 * **Hitta de 20 senaste misslyckade anropen (Requests):**
   ```kql
   requests
@@ -162,6 +163,25 @@ Klicka på **Logs** under din Application Insights eller ditt Log Analytics Work
   | order by timestamp desc
   | limit 20
   ```
+
+* **Genomsnittlig svarstid per API-endpoint (Prestanda-analys):**
+  ```kql
+  requests
+  | summarize GenomsnittligSvarstidMs = avg(duration), AntalAnrop = count() by name
+  | order by GenomsnittligSvarstidMs desc
+  ```
+
+  ![Genomsnittlig svarstid per endpoint](docs/images/log-analytics-average-duration.png)
+
+* **Trafik-trend (Antal anrop per timme senaste dygnet):**
+  ```kql
+  requests
+  | where timestamp > ago(24h)
+  | summarize AntalAnrop = count() by bin(timestamp, 1h)
+  | render timechart
+  ```
+
+  ![Trafik-trend senaste dygnet](docs/images/log-analytics-request-trend.png)
 
 * **Hitta de 20 senaste undantagen (Exceptions) med felmeddelande och fil:**
   ```kql
@@ -174,10 +194,11 @@ Klicka på **Logs** under din Application Insights eller ditt Log Analytics Work
 * **Spåra externa API-anrop (t.ex. till Hunter.io eller internt Core API):**
   ```kql
   dependencies
-  | project timestamp, name, type, duration, success, resultCode
-  | order by timestamp desc
-  | limit 20
+  | summarize MedeltidMs = avg(duration), MisslyckadeAnrop = countif(success == false), TotalaAnrop = count() by target
+  | order by MisslyckadeAnrop desc
   ```
+
+  ![Beroende-analys](docs/images/log-analytics-dependencies.png)
 
 </details>
 
