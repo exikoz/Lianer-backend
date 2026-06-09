@@ -1,6 +1,6 @@
 # Lianer Backend 2.0
 
-<p align="center">
+<p align="left">
   <a href="README.md" title="English"><img src="docs/svg/england.svg" alt="English" width="30" /></a>
   &nbsp;
   <a href="README.es.md" title="Español"><img src="docs/svg/spain.svg" alt="Español" width="30" /></a>
