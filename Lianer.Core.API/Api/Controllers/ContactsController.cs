@@ -20,6 +20,23 @@ public class ContactsController : ControllerBase
         _service = service;
         _logger = logger;
     }
+    
+    /// <summary>
+    /// Get all contacts
+    /// </summary>
+    [HttpGet]
+    [ProducesResponseType(typeof(IReadOnlyList<ContactResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<ContactResponse>>> List(
+        int currentPage = 1,
+        int pageSize = 100,
+        CancellationToken ct = default)
+    {
+        _logger.LogInformation("GET contacts page {CurrentPage}, size {PageSize}", currentPage, pageSize);
+
+        var contacts = await _service.GetContacts(currentPage, pageSize, ct);
+
+        return Ok(contacts);
+    }
 
     /// <summary>
     /// Get contact by id

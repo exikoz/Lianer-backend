@@ -6,18 +6,17 @@ public class ActivityService(IActivityRepository repo) : IActivityService
 
 
     #region Write operations (update, create and delete)
-    public async Task<Guid> Create(CreateActivityRecord request, CancellationToken ct)
+    public async Task<Guid> Create(Guid createdBy, CreateActivityRecord request, CancellationToken ct)
     {
         ValidationHelper(request);
         var activity = new Activity(
             request.Description,
             request.AssignedTo,
-            request.CreatedBy,
+            createdBy,
             request.StartDate,
             request.EndDate,
             request.Status ?? ActivityStatus.Pending
         );
-
         var created = await _repo.Create(activity, ct);
         return created.Id;
     }
@@ -57,6 +56,8 @@ public class ActivityService(IActivityRepository repo) : IActivityService
             response.CreatedBy,
             response.CreatedAt, 
             response.UpdatedAt,
+            response.StartDate,
+            response.EndDate,
             response.Status
         );
     }   
@@ -66,7 +67,6 @@ public class ActivityService(IActivityRepository repo) : IActivityService
     {
         Guard.Against.Null(request);
         Guard.Against.NullOrWhiteSpace(request.Description);
-        Guard.Against.NullOrEmptyGuid(request.CreatedBy);
     }
 
 }
