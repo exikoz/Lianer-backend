@@ -62,7 +62,7 @@ Efter att ha utvärderat hur frontenden (Vanilla JS) bäst hostas i Azure har vi
 Under implementationen stötte vi på flera strikta Azure Policy-begränsningar knutna till Student-kontona, vilket tvingade fram avgörande arkitekturval:
 
 - **Övervägt alternativ 1 (Azure Static Web Apps):** Initialt var planen att använda SWA eftersom det är industristandard för Vanilla JS. Dock upptäcktes att studentkontona endast tillåter resurser i 5 specifika regioner (bl.a. *Italy North*). Eftersom SWA inte är tillgängligt i någon av dessa 5 godkända regioner var denna tjänst **fysiskt omöjlig** att skapa (Policy Error: `RequestDisallowedByAzure`).
-- **Valt alternativ (Azure Container Apps):** Genom att pivotera till att containerisera även frontenden (vilket uppfyller alternativa betygskrav) kunde vi runda region-spärrarna. Detta gav oss oväntade fördelar:
+- **Valt alternativ (Azure Container Apps):** Genom att styra om till att containerisera även frontenden (vilket uppfyller alternativa betygskrav) kunde vi runda region-spärrarna. Detta gav oss oväntade fördelar:
   - **Enhetlighet:** Hela ekosystemet (frontend och backend) ligger nu i samma Container Apps-miljö.
   - **Säkerhetsdjup:** Den rootless Nginx-containern adderar ytterligare ett lager av minsta behörighet (Defense in Depth).
 
@@ -100,7 +100,7 @@ För att garantera högsta möjliga säkerhet för applikationerna har vi implem
 ![Key Vault RBAC Rolltilldelningar](docs/images/keyvault-identity-rbac.png)
 
 ### Varför vi gjorde det (ADR & VG-krav)
-- **Infrastructure-as-Code och Bicep RBAC:** Vi valde aktivt att inte bygga infrastrukturen med manuella skript, utan att från start använda **Azure RBAC via Bicep** (`enableRbacAuthorization: true`). Detta ger en mer modern "Zero Trust"-modell, full spårbarhet via Git och minimerar manuella fel jämfört med den äldre "Access Policies"-metoden. Våra Container Apps får *enbart* läsrättigheter till hemligheterna (rollen *Key Vault Secrets User*).
+- **Infrastruktur som kod och rollbaserad åtkomst (RBAC):** Vi valde aktivt att inte bygga infrastrukturen med manuella skript, utan att från start använda rollbaserad åtkomst via Bicep-kod (`enableRbacAuthorization: true`). Detta ger en mycket säkrare och modernare åtkomstmodell (Zero Trust), full spårbarhet via Git och minimerar manuella fel jämfört med de äldre behörighetsmetoderna. Våra Container Apps får *enbart* läsrättigheter till hemligheterna (rollen *Key Vault Secrets User*).
 - **Workaround för Azure for Students (Enhetlig Resursgrupp):** På grund av hårda begränsningar ("Policy Error") och spärrar i skolkontots prenumeration (t.ex. inga ACR Tasks, och inga Static Web Apps i den tillåtna regionen Italy North) tvingades vi strukturera om infrastrukturen. Lösningen blev att samla hela systemet (frontend, backend och Key Vault) under ett och samma tak i en existerande Resource Group i Italy North. Genom att köra allt som Azure Container Apps kan vi bygga containrarna via GitHub Actions istället. Teamkollegorna har fått riktad åtkomst till denna resursgrupp, och varje enskild container har tilldelats exakt de behörigheter den behöver (Managed Identity) för att allt ska kunna köras och samarbetas kring smidigt trots skolkontots begränsningar.
 - **Eliminera hotbilden för läckta nycklar:** Den vanligaste säkerhetsbristen vid molnutveckling är att utvecklare råkar commita (eller spara) produktionslösenord i Git. Genom att tvinga applikationen att hämta dessa "on-the-fly" vid uppstart från Key Vault finns inga riktiga lösenord tillgängliga i klartext för obehöriga som granskar vår källkod.
 - **Defense in Depth (Säkerhetsdjup):** I kombination med de rootless Docker-containrarna vi skapade tidigare (Epic 2), lägger Managed Identity till ytterligare ett identitetsbaserat skyddslager. Detta uppfyller tydligt VG-kraven för molnsäkerhet.
@@ -138,7 +138,7 @@ För att se realtidsloggar direkt från API-containrarna eller analysera prestan
 
 ![Application Insights Live Metrics](docs/images/application-insights-live-metrics.png)
 
-- **Via Azure CLI (Log Stream):** Kör följande kommando i terminalen för att strömma loggar:
+- **Via Azure CLI (Log Stream):** Kör följande kommando i terminalen för att visa loggar i realtid:
   ```bash
   az containerapp logs show \
     --name lianer-core-api \
