@@ -127,7 +127,8 @@ public class AuthService : IAuthService
             _logger.LogInformation("Auto-registering new Google user: {Email}", googleUser.Email);
             
             user = User.CreateExternal(
-                googleUser.Name,
+                googleUser.GivenName,
+                googleUser.FamilyName,
                 emailNormalized,
                 "Google",
                 googleUser.Id
