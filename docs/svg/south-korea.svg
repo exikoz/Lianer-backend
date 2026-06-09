@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48" role="img" aria-labelledby="title desc">
+  <title id="title">South Korea flag</title>
+  <desc id="desc">White flag with a red and blue taegeuk and four black trigrams.</desc>
+  <defs>
+    <clipPath id="clip">
+      <rect width="64" height="48" rx="4" ry="4"/>
+    </clipPath>
+    <g id="fullBar"><rect x="-5" y="-1" width="10" height="2" fill="#111111"/></g>
+    <g id="brokenBar">
+      <rect x="-5" y="-1" width="4" height="2" fill="#111111"/>
+      <rect x="1" y="-1" width="4" height="2" fill="#111111"/>
+    </g>
+    <g id="geon">
+      <use href="#fullBar" y="-4"/>
+      <use href="#fullBar" y="0"/>
+      <use href="#fullBar" y="4"/>
+    </g>
+    <g id="gon">
+      <use href="#brokenBar" y="-4"/>
+      <use href="#brokenBar" y="0"/>
+      <use href="#brokenBar" y="4"/>
+    </g>
+    <g id="gam">
+      <use href="#brokenBar" y="-4"/>
+      <use href="#fullBar" y="0"/>
+      <use href="#brokenBar" y="4"/>
+    </g>
+    <g id="ri">
+      <use href="#fullBar" y="-4"/>
+      <use href="#brokenBar" y="0"/>
+      <use href="#fullBar" y="4"/>
+    </g>
+  </defs>
+  <g clip-path="url(#clip)">
+    <rect width="64" height="48" fill="#ffffff"/>
+
+    <g transform="translate(18 13) rotate(-56)">
+      <use href="#geon"/>
+    </g>
+    <g transform="translate(46 13) rotate(56)">
+      <use href="#gam"/>
+    </g>
+    <g transform="translate(18 35) rotate(56)">
+      <use href="#ri"/>
+    </g>
+    <g transform="translate(46 35) rotate(-56)">
+      <use href="#gon"/>
+    </g>
+
+    <g transform="rotate(-34 32 24)">
+      <path d="M32 13.5a10.5 10.5 0 0 1 0 21a5.25 5.25 0 0 0 0-10.5a5.25 5.25 0 0 1 0-10.5z" fill="#c60c30"/>
+      <path d="M32 34.5a10.5 10.5 0 0 1 0-21a5.25 5.25 0 0 0 0 10.5a5.25 5.25 0 0 1 0 10.5z" fill="#003478"/>
+    </g>
+  </g>
+  <rect width="64" height="48" rx="4" ry="4" fill="none" stroke="#d0d7de"/>
+</svg>

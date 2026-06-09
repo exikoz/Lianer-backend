@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48" role="img" aria-labelledby="title desc">
+  <title id="title">England flag</title>
+  <desc id="desc">White flag with a red Saint George's cross.</desc>
+  <defs>
+    <clipPath id="clip">
+      <rect width="64" height="48" rx="4" ry="4"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#clip)">
+    <rect width="64" height="48" fill="#ffffff"/>
+    <rect x="0" y="19" width="64" height="10" fill="#ce1124"/>
+    <rect x="27" y="0" width="10" height="48" fill="#ce1124"/>
+  </g>
+  <rect width="64" height="48" rx="4" ry="4" fill="none" stroke="#d0d7de"/>
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48" role="img" aria-labelledby="title desc">
+  <title id="title">Japan flag</title>
+  <desc id="desc">White flag with a centered red disc.</desc>
+  <defs>
+    <clipPath id="clip">
+      <rect width="64" height="48" rx="4" ry="4"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#clip)">
+    <rect width="64" height="48" fill="#ffffff"/>
+    <circle cx="32" cy="24" r="14" fill="#bc002d"/>
+  </g>
+  <rect width="64" height="48" rx="4" ry="4" fill="none" stroke="#d0d7de"/>
+</svg>

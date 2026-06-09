@@ -1,5 +1,23 @@
 # Lianer Backend 2.0
 
+<p align="center">
+  <a href="README.md" title="English"><img src="docs/svg/england.svg" alt="English" width="30" /></a>
+  &nbsp;
+  <a href="README.es.md" title="Español"><img src="docs/svg/spain.svg" alt="Español" width="30" /></a>
+  &nbsp;
+  <a href="README.sv.md" title="Svenska"><img src="docs/svg/sweden.svg" alt="Svenska" width="30" /></a>
+  &nbsp;
+  <a href="README.de.md" title="Deutsch"><img src="docs/svg/germany.svg" alt="Deutsch" width="30" /></a>
+  &nbsp;
+  <a href="README.ko.md" title="한국어"><img src="docs/svg/south-korea.svg" alt="한국어" width="30" /></a>
+  &nbsp;
+  <a href="README.ja.md" title="日本語"><img src="docs/svg/japan.svg" alt="日本語" width="30" /></a>
+  &nbsp;
+  <a href="README.zh.md" title="中文"><img src="docs/svg/china.svg" alt="中文" width="30" /></a>
+</p>
+
+
+
 [English](README.md) | [Swedish](README.sv.md) | [Documentation](deployment.md) | [ADR](docs/adr/0001-choosing-azure-hosting.md) | [AI](README.md#ai-driven-feature-gemini-ai-integration) | [Frontend Live Demo](https://lianer-frontend.icybush-5ce7e353.italynorth.azurecontainerapps.io)
 
 A secure and distributed ASP.NET Core 9 microservices architecture built for cloud deployment. Features JWT authentication, Google OAuth2 integration, external API communication (Hunter.io & Gemini AI), and passwordless Azure Key Vault integration.

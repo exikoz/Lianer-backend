@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48" role="img" aria-labelledby="title desc">
+  <title id="title">Spain flag</title>
+  <desc id="desc">Horizontal red, yellow, and red triband.</desc>
+  <defs>
+    <clipPath id="clip">
+      <rect width="64" height="48" rx="4" ry="4"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#clip)">
+    <rect width="64" height="48" fill="#aa151b"/>
+    <rect y="12" width="64" height="24" fill="#f1bf00"/>
+  </g>
+  <rect width="64" height="48" rx="4" ry="4" fill="none" stroke="#d0d7de"/>
+</svg>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48" role="img" aria-labelledby="title desc">
+  <title id="title">Germany flag</title>
+  <desc id="desc">Horizontal black, red, and gold tricolor.</desc>
+  <defs>
+    <clipPath id="clip">
+      <rect width="64" height="48" rx="4" ry="4"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#clip)">
+    <rect width="64" height="16" y="0" fill="#000000"/>
+    <rect width="64" height="16" y="16" fill="#dd0000"/>
+    <rect width="64" height="16" y="32" fill="#ffce00"/>
+  </g>
+  <rect width="64" height="48" rx="4" ry="4" fill="none" stroke="#d0d7de"/>
+</svg>
