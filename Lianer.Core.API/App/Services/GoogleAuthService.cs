@@ -22,22 +22,25 @@ public class GoogleAuthService : IGoogleAuthService
 
     /// <summary>
     /// Generates the Google OAuth2 authorization URL for the client to redirect to
+    /// Uses implicit flow (token in URL fragment) for client-side authentication
     /// </summary>
     /// <returns>The complete Google authorization URL</returns>
     public string GetGoogleLoginUrl()
     {
-        var clientId = _configuration["GoogleAuth:ClientId"];
-        var redirectUri = _configuration["GoogleAuth:RedirectUri"];
+        var clientId = _configuration["GoogleAuth:ClientId"] ?? _configuration["Google:Auth:ClientId"];
+        var redirectUri = _configuration["GoogleAuth:RedirectUri"] ?? _configuration["Google:Auth:RedirectUri"];
         var baseUrl = "https://accounts.google.com/o/oauth2/v2/auth";
 
+        // Use token response_type for implicit flow (client-side)
         var url = $"{baseUrl}?" +
                   $"client_id={clientId}&" +
                   $"redirect_uri={Uri.EscapeDataString(redirectUri ?? string.Empty)}&" +
-                  "response_type=code&" +
+                  "response_type=token&" +  // Changed from 'code' to 'token' for implicit flow
                   "scope=openid%20email%20profile&" +
-                  "access_type=offline&" +
                   "include_granted_scopes=true";
 
+        _logger.LogInformation("Generated Google login URL with redirect_uri: {RedirectUri}", redirectUri);
+        
         return url;
     }
 
