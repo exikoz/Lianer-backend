@@ -6,10 +6,12 @@ public sealed class NoteService(INoteRepository repo) : INoteService
 
     public async Task<Guid> Create(
         Guid activityId,
+        Guid createdBy,
         CreateNoteRecord request,
         CancellationToken ct)
     {
         Guard.Against.NullOrEmptyGuid(activityId);
+        Guard.Against.NullOrEmptyGuid(createdBy);
         Guard.Against.Null(request);
         Guard.Against.NullOrWhiteSpace(request.Title);
         Guard.Against.NullOrWhiteSpace(request.Content);
@@ -20,7 +22,7 @@ public sealed class NoteService(INoteRepository repo) : INoteService
             ActivityId = activityId,
             Title = request.Title,
             Content = request.Content,
-            CreatedBy = request.CreatedBy
+            CreatedBy = createdBy
         };
 
         var created = await _repo.Create(note, ct);

@@ -1,6 +1,7 @@
 public sealed record UpdateActivityRecord(
     Guid Id,
-    string? Description,
+    string? Title,
+    string Description,
     Guid? AssignedTo,
     DateTime? StartDate,
     DateTime? EndDate,

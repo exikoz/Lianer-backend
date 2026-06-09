@@ -54,7 +54,7 @@ public class Activity
         ActivityStatus? status)
     {
         if(!string.IsNullOrWhiteSpace(description)) Description = description;
-        if(assignedTo != null) AssignedTo = assignedTo;
+        AssignedTo = assignedTo;
         if(startDate != null) StartDate = startDate.Value;
         if(endDate != null) EndDate = endDate.Value;
         if(status != null) Status = status.Value;

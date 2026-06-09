@@ -6,4 +6,5 @@ public interface IContactService
     Task Delete(Guid id, CancellationToken ct);
     Task<ContactResponse?> GetContactById(Guid id, CancellationToken ct);
     Task<Guid> Update(Guid id, UpdateContactRequest request, CancellationToken ct);
+    Task<IReadOnlyList<ContactResponse>> GetContacts(int currentPage,int pageSize, CancellationToken ct);
 }
