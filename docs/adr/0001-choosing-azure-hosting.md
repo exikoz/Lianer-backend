@@ -4,7 +4,7 @@
 Godkänd
 
 ## Skapad av
-Joco
+Joco, Alexander, Hussein
 
 ## Datum
 2026-06-02
