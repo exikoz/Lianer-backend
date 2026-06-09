@@ -79,6 +79,19 @@ public class ContactService(IContactRepository repo) : IContactService
 
     #region Read operations
 
+
+    public async Task<IReadOnlyList<ContactResponse>> GetContacts(
+        int currentPage,
+        int pageSize,
+        CancellationToken ct)
+    {
+        // math min puts a stop so we can return more than 500 
+        var safeCurrentPage = currentPage <= 0 ? 1 : currentPage;
+        var safePageSize = pageSize <= 0 ? 100 : pageSize;
+        safePageSize = Math.Min(safePageSize, 500);
+        var contacts = await _repo.GetAll(safeCurrentPage, safePageSize, ct);
+        return [.. contacts.Select(ToResponse)];
+    }
     public async Task<ContactResponse?> GetContactById(Guid id, CancellationToken ct)
     {
         Guard.Against.NullOrEmptyGuid(id);
@@ -88,6 +101,12 @@ public class ContactService(IContactRepository repo) : IContactService
         if (contact is null)
             return null;
 
+        return ToResponse(contact);
+    }
+
+    #endregion
+    private static ContactResponse ToResponse(Contact contact)
+    {
         return new ContactResponse
         {
             Id = contact.Id,
@@ -98,11 +117,13 @@ public class ContactService(IContactRepository repo) : IContactService
             Phone = contact.Phone,
             Email = contact.Email,
 
-            Social = new ContactSocialDto
-            {
-                LinkedIn = contact.Social.LinkedIn,
-                Website = contact.Social.Website
-            },
+            Social = contact.Social is null
+                ? null
+                : new ContactSocialDto
+                {
+                    LinkedIn = contact.Social.LinkedIn,
+                    Website = contact.Social.Website
+                },
 
             Status = contact.Status,
             AssignedTo = contact.AssignedTo,
@@ -122,13 +143,12 @@ public class ContactService(IContactRepository repo) : IContactService
                 })]
         };
     }
-
-    #endregion
-
     private static void ValidationHelper(CreateContactRequest request)
     {
         Guard.Against.Null(request);
         Guard.Against.NullOrWhiteSpace(request.FirstName);
         Guard.Against.NullOrWhiteSpace(request.LastName);
     }
+
+
 }

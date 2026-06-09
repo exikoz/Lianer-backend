@@ -1,8 +1,10 @@
 public sealed record CreateActivityRecord(
+    
+    string? Title,
     string Description,
     Guid? AssignedTo,
-    Guid CreatedBy,
     DateTime? StartDate,
     DateTime? EndDate,
     ActivityStatus? Status
 );
+

@@ -8,6 +8,8 @@ public sealed record ActivitySummary(
     Guid CreatedBy,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
+    DateTime? StartDate,
+    DateTime? EndDate,
     ActivityStatus Status
 ) : IProjection<Activity, ActivitySummary>
 {
@@ -19,6 +21,8 @@ public sealed record ActivitySummary(
         a.CreatedBy,
         a.CreatedAt,
         a.UpdatedAt,
+        a.StartDate,
+        a.EndDate,
         a.Status
     );
 }

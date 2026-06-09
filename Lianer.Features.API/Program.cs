@@ -18,6 +18,7 @@ using Lianer.Features.API.Filters;
 using Lianer.Features.API.Middleware;
 using Lianer.Features.API.Services;
 using Microsoft.ApplicationInsights.AspNetCore.Extensions;
+using Lianer.Features.API.Config;
 
 namespace Lianer.Features.API
 {
@@ -43,18 +44,7 @@ namespace Lianer.Features.API
             }
 
             // --- Application Insights Telemetry ---
-            var telemetryConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
-            if (!string.IsNullOrEmpty(telemetryConnectionString))
-            {
-                builder.Services.AddApplicationInsightsTelemetry(new ApplicationInsightsServiceOptions
-                {
-                    ConnectionString = telemetryConnectionString
-                });
-            }
-            else
-            {
-                Console.WriteLine("Features API Telemetry: APPLICATIONINSIGHTS_CONNECTION_STRING is missing. Telemetry is disabled.");
-            }
+            builder.Services.SetupTelemetry(builder.Configuration);
 
             // --- Caching Support (K-128) ---
             builder.Services.AddMemoryCache();
@@ -281,6 +271,11 @@ namespace Lianer.Features.API
             // 6. Authentication & Authorization
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.MapGet("/", () => app.Environment.IsDevelopment() 
+                ? Results.Redirect("/scalar/v1") 
+                : Results.Ok(new { status = "Online", service = "Lianer Features API" }));
+            app.MapGet("/favicon.ico", () => Results.Ok());
 
             app.MapControllers()
                 .RequireRateLimiting("fixed");
