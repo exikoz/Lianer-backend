@@ -11,7 +11,7 @@ public class GeminiService(
     ILogger<GeminiService> logger) : IGeminiService
 {
     private const string ModelEndpoint =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
     // System prompt that instructs Gemini how to behave as a CRM agent
     private const string SystemPrompt = """
@@ -58,10 +58,12 @@ public class GeminiService(
             var json = JsonSerializer.Serialize(geminiRequest);
 
             var client = httpClientFactory.CreateClient("Gemini");
-            var httpRequest = new HttpRequestMessage(HttpMethod.Post, $"{ModelEndpoint}?key={apiKey}")
+            var httpRequest = new HttpRequestMessage(HttpMethod.Post, ModelEndpoint)
             {
                 Content = new StringContent(json, Encoding.UTF8, "application/json")
             };
+            // New AQ. key format requires header-based auth instead of query param
+            httpRequest.Headers.Add("x-goog-api-key", apiKey);
 
             var response = await client.SendAsync(httpRequest, ct);
             var responseBody = await response.Content.ReadAsStringAsync(ct);
@@ -153,13 +155,20 @@ public class GeminiService(
             if (!Enum.TryParse<AgentActionType>(actionStr, out var action))
                 action = AgentActionType.Clarify;
 
-            // Build payload dictionary
+            // Build payload dictionary — handle arrays, objects and primitives
             var payload = new Dictionary<string, object?>();
             if (payloadNode is not null)
             {
                 foreach (var kv in payloadNode)
                 {
-                    payload[kv.Key] = kv.Value?.GetValue<object>();
+                    payload[kv.Key] = kv.Value switch
+                    {
+                        JsonArray arr  => arr,           // keep as JsonArray for executor
+                        JsonObject obj => obj,           // keep as JsonObject
+                        JsonValue val  => val.GetValue<object>(),
+                        null           => null,
+                        _              => kv.Value
+                    };
                 }
             }
 

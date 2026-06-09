@@ -146,9 +146,12 @@ public class AgentExecutor(
         if (!p.TryGetValue(key, out var v) || v is null)
             return [];
 
-        // Gemini may return a JSON array serialized as a string
         if (v is System.Text.Json.Nodes.JsonArray arr)
-            return [.. arr.Select(x => x?.GetValue<string>() ?? string.Empty)];
+            return [.. arr.Select(x => x?.GetValue<string>() ?? string.Empty).Where(s => s != string.Empty)];
+
+        // Sometimes Gemini returns a comma-separated string instead of array
+        if (v is string s && !string.IsNullOrWhiteSpace(s))
+            return [.. s.Split(',').Select(x => x.Trim()).Where(x => x.Length > 0)];
 
         return [];
     }
