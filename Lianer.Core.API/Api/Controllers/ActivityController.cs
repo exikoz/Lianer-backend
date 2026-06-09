@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Asp.Versioning;
 using Lianer.Core.API.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -92,8 +93,9 @@ public class ActivityController : ControllerBase
         CancellationToken ct)
     {
         _logger.LogInformation("POST {BaseRoute} called", BaseRoute);
-
-        var id = await _service.Create(request, ct);
+        if (CurrentUserId == null) return Unauthorized();
+        var userId = CurrentUserId.Value;
+        var id = await _service.Create(userId, request, ct);
 
         var created = await _queries.GetActivitySummaryById(id, ct);
 
@@ -167,5 +169,14 @@ public class ActivityController : ControllerBase
         var activities = await _queries.GetLastUpdatedActivities(currentPage, pageSize, ct);
 
         return Ok(activities);
+    }
+
+    private Guid? CurrentUserId 
+    {
+        get
+        {
+            var claimValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return Guid.TryParse(claimValue, out var guid) ? guid : null;
+        }
     }
 }

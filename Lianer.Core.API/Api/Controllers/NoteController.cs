@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -47,7 +48,9 @@ public class NoteController : ControllerBase
         CreateNoteRecord request,
         CancellationToken ct)
     {
-        var id = await _service.Create(activityId, request, ct);
+        if (CurrentUserId == null) return Unauthorized();
+        var userId = CurrentUserId.Value;
+        var id = await _service.Create(activityId,userId, request, ct);
 
         var created = await _queries.GetById(activityId, id, ct);
 
@@ -85,5 +88,14 @@ public class NoteController : ControllerBase
         await _service.Delete(activityId, noteId, ct);
 
         return NoContent();
+    }
+
+    private Guid? CurrentUserId 
+    {
+        get
+        {
+            var claimValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return Guid.TryParse(claimValue, out var guid) ? guid : null;
+        }
     }
 }

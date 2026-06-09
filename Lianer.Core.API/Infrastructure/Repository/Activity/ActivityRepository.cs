@@ -10,7 +10,4 @@ public class ActivityRepository(AppDbContext context) : ACrud<Activity>(context)
     protected readonly AppDbContext _c = context;
 
 
-
-
- 
 }

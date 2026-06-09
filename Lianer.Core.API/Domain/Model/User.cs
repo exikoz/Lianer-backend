@@ -94,13 +94,13 @@ public class User
         PasswordHash = newHash;
         UpdatedAt = DateTime.UtcNow;
     }
-    public static User CreateExternal(string fName, string email, string provider, string externalId)
+    public static User CreateExternal(string fName, string lName, string email, string provider, string externalId)
     {
         return new User
         {
             Id = Guid.NewGuid(),
             FirstName = fName,
-            LastName =  "external", //TODO temporary fix
+            LastName = lName,
             Email = email,
             Provider = provider,
             ExternalProviderId = externalId,
