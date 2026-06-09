@@ -139,6 +139,8 @@ public class AuthServiceTests
         {
             Id = "google-123",
             Name = "Google Användare",
+            GivenName = "Google",
+            FamilyName = "Användare",
             Email = "google@example.com"
         };
 
@@ -147,7 +149,8 @@ public class AuthServiceTests
         result.Should().NotBeNull();
         result.AccessToken.Should().Be("test-jwt-token");
         result.User.Email.Should().Be("google@example.com");
-        result.User.FirstName.Should().Be("Google Användare");
+        result.User.FirstName.Should().Be("Google");
+        result.User.LastName.Should().Be("Användare");
     }
 
     [Fact]
