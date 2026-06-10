@@ -1,6 +1,6 @@
 # Deployment and Operations Documentation (Lianer Fullstack)
 
-[English](README.md) | [Swedish](README.sv.md) | [Dokumentation](deployment.md) | [ADR](docs/adr/0001-choosing-azure-hosting.md) | [AI](README.sv.md#ai-driven-funktion-gemini-ai-integration) | [Frontend Live-demo](https://lianer-frontend.icybush-5ce7e353.italynorth.azurecontainerapps.io)
+[English](README.md) | [Swedish](README.sv.md) | [Dokumentation](deployment.md) | [ADR](docs/adr/0001-choosing-azure-hosting.md) | [AI](README.sv.md#ai-driven-funktion-gemini-ai-integration) | <a href="https://lianer-frontend.icybush-5ce7e353.italynorth.azurecontainerapps.io/" target="_blank" rel="noopener noreferrer">Frontend Live-demo</a>
 
 Detta dokument beskriver utvärderingen, designbesluten och säkerhetsövervägandena kring driftsättningen av Lianer fullstack-applikation.
 
