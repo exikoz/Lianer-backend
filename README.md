@@ -556,6 +556,9 @@ Both services feature interactive API documentation via Scalar (Development mode
 
 ![Lead Import Success](docs/images/api-documentation/leads-import-sogeti-success.png)
 *Successful import and enrichment of leads from Hunter.io in Features API.*
+
+![Hunter.io Contact Search](docs/images/api-documentation/features-hunter-frontend.png)
+*Hunter.io search by domain (e.g. stripe.com) under the Contacts/Leads view in the interface, retrieving and displaying found contacts.*
 </details>
 </details>
 

@@ -560,6 +560,9 @@ Båda tjänsterna har interaktiv API-dokumentation via Scalar (endast i utveckli
 
 ![Import av Leads Lyckad](docs/images/api-documentation/leads-import-sogeti-success.png)
 *Import och berikning av leads från Hunter.io i Features API.*
+
+![Hunter.io Sökning Kontakter](docs/images/api-documentation/features-hunter-frontend.png)
+*Hunter.io-sökning på domän (t.ex. stripe.com) under Kontakter-vyn i gränssnittet, där hittade kontakter hämtas och visas.*
 </details>
 </details>
 
