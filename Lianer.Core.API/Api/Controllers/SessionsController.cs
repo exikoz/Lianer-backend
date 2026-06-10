@@ -37,46 +37,7 @@ public class SessionsController : ControllerBase
         _logger = logger;
     }
 
-    [HttpPost]
-    [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreateSession([FromBody] LoginRequestDto request)
-    {
-        _logger.LogInformation("POST /api/v1/sessions called");
 
-        var response = await _authService.LoginAsync(request);
-
-        _authCookieService.CreateAccessCookie(
-            Response,
-            response.AccessToken);
-
-        _authCookieService.CreateCsrfCookie(Response);
-         
-        return Ok(new
-        {
-            message = "Login successful.",
-            user = response.User
-        });
-    }
-
-    [HttpGet("cookie-test")]
-    [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public IActionResult CookieTest()
-    {
-        var diagnostics = _authCookieService.GetUserInfoFromCookie(HttpContext);
-
-        _logger.LogInformation("Cookie auth diagnostics: {@Diagnostics}", diagnostics);
-
-        return Ok(new
-        {
-            message = "Cookie auth works. JWT was read from the access cookie.",
-            diagnostics
-        });
-    }
 
     
     /// <summary>
@@ -87,7 +48,7 @@ public class SessionsController : ControllerBase
     /// <response code="200">Login successful, returns JWT token</response>
     /// <response code="401">Invalid credentials</response>
     /// <response code="400">Invalid input data</response>
-    /*
+    
     [HttpPost]
     [ProducesResponseType(typeof(LoginResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -99,7 +60,7 @@ public class SessionsController : ControllerBase
         var response = await _authService.LoginAsync(request);
 
         return Ok(response);
-    } */
+    } 
 
     /// <summary>
     /// Deletes a session (logout) - Future implementation
@@ -178,12 +139,53 @@ public class SessionsController : ControllerBase
         return Ok(new { url });
     }
 
-    private Guid? CurrentUserId 
+
+
+    /* 
+        This endpoint is fully working and can correctly validate users and
+        extract JWT-tokens from HttpOnly cookies. 
+        This should replace our Authentication in Production.
+    */
+    [HttpPost]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateSessionWithCookie([FromBody] LoginRequestDto request)
     {
-        get
+        _logger.LogInformation("POST /api/v1/sessions called");
+
+        var response = await _authService.LoginAsync(request);
+
+        _authCookieService.CreateAccessCookie(
+            Response,
+            response.AccessToken);
+
+        _authCookieService.CreateCsrfCookie(Response);
+         
+        return Ok(new
         {
-            var claimValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return Guid.TryParse(claimValue, out var guid) ? guid : null;
-        }
+            message = "Login successful.",
+            user = response.User
+        });
     }
+
+    [HttpGet("cookie-test")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public IActionResult CookieTest()
+    {
+        var diagnostics = _authCookieService.GetUserInfoFromCookie(HttpContext);
+
+        _logger.LogInformation("Cookie auth diagnostics: {@Diagnostics}", diagnostics);
+
+        return Ok(new
+        {
+            message = "Cookie auth works. JWT was read from the access cookie.",
+            diagnostics
+        });
+    }
+
+
 }
