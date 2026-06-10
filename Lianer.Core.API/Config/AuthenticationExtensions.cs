@@ -1,4 +1,5 @@
 using System.Text;
+using Lianer.Core.API.App.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -36,7 +37,25 @@ public static class AuthenticationExtensions
                 ValidAudience = jwtSettings["Audience"] ?? "http://localhost:5297",
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
                 ClockSkew = TimeSpan.Zero
-                };
+            };
+            
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = ctx =>
+                {
+                    var cookieService = ctx.HttpContext
+                    .RequestServices
+                    .GetRequiredService<AuthCookieService>();
+                    var accessToken = cookieService.ReadAccessTokenCookie(ctx.Request);
+
+                    if (!string.IsNullOrWhiteSpace(accessToken))
+                    {
+                         ctx.Token = accessToken;
+                    }
+
+                    return Task.CompletedTask;
+                }
+            };
             });
 
             services.AddAuthorization(); // kan bli egen funktion vid uppskalning
