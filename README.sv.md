@@ -445,7 +445,7 @@ dotnet user-secrets set "JwtSettings:ExpirationMinutes" "60"
 # Google OAuth (OBLIGATORISKT för Google SSO)
 dotnet user-secrets set "Google:Auth:ClientId" "YOUR_CLIENT_ID.apps.googleusercontent.com"
 dotnet user-secrets set "Google:Auth:ClientSecret" "YOUR_CLIENT_SECRET"
-dotnet user-secrets set "Google:Auth:RedirectUri" "http://localhost:3000/auth/callback"
+dotnet user-secrets set "Google:Auth:RedirectUri" "http://localhost:8080"
 
 # Verifiera
 dotnet user-secrets list
