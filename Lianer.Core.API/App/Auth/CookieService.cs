@@ -23,12 +23,10 @@ public interface IAuthCookieService
 public sealed class AuthCookieService : IAuthCookieService
 {
     private readonly AuthCookieSettings _settings;
-
     public AuthCookieService(IOptions<AuthCookieSettings> options)
     {
         _settings = options.Value;
     }
-
     public void SetAuthenticationCookies(
         HttpResponse response,
         string accessJwt,
