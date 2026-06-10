@@ -1,10 +1,10 @@
 # Lianer Backend 2.0
 
-[English](README.md) | [Swedish](README.sv.md) | [Documentation](deployment.md) | [ADR](docs/adr/0001-choosing-azure-hosting.md) | [AI](README.md#ai-driven-feature-gemini-ai-integration) | [Frontend Live Demo](https://lianer-frontend.icybush-5ce7e353.italynorth.azurecontainerapps.io)
+[English](README.md) | [Swedish](README.sv.md) | [Documentation](deployment.md) | [ADR](docs/adr/0001-choosing-azure-hosting.md) | [AI](README.md#ai-driven-feature-gemini-ai-integration) | <a href="https://lianer-frontend.icybush-5ce7e353.italynorth.azurecontainerapps.io/" target="_blank" rel="noopener noreferrer">Frontend Live Demo</a>
 
 A secure and distributed ASP.NET Core 9 microservices architecture built for cloud deployment. Features JWT authentication, Google OAuth2 integration, external API communication (Hunter.io & Gemini AI), and passwordless Azure Key Vault integration.
 
-**Live Application:** [Lianer Frontend App](https://lianer-frontend.icybush-5ce7e353.italynorth.azurecontainerapps.io)
+**Live Application:** <a href="https://lianer-frontend.icybush-5ce7e353.italynorth.azurecontainerapps.io/" target="_blank" rel="noopener noreferrer">Lianer Frontend App</a>
 
 ![Build & Test](https://github.com/exikoz/Lianer-backend/actions/workflows/pr.yml/badge.svg)
 ![Deploy to Azure](https://github.com/exikoz/Lianer-backend/actions/workflows/deploy.yml/badge.svg)
@@ -27,8 +27,13 @@ A secure and distributed ASP.NET Core 9 microservices architecture built for clo
 - [Security](#security)
 - [Testing](#testing)
 - [CI/CD Pipeline](#cicd-pipeline)
-- [Advanced Design & Resiliency Patterns](#advanced-design--resiliency-patterns)
+- [Advanced Design & Resiliency Patterns](#advanced-design-and-resiliency-patterns)
+- [Surgical Test Flow (End-to-End)](#surgical-test-flow)
+- [Observability & Monitoring](#observability-and-monitoring)
+- [AI-Driven Feature (Gemini AI Integration)](#ai-driven-feature)
 - [Team](#team)
+- [Contact](#contact)
+- [Technical Verification (Logs)](#technical-verification)
 
 ---
 
@@ -444,7 +449,10 @@ dotnet user-secrets set "JwtSettings:ExpirationMinutes" "60"
 # Google OAuth (MANDATORY for Google SSO)
 dotnet user-secrets set "Google:Auth:ClientId" "YOUR_CLIENT_ID.apps.googleusercontent.com"
 dotnet user-secrets set "Google:Auth:ClientSecret" "YOUR_CLIENT_SECRET"
-dotnet user-secrets set "Google:Auth:RedirectUri" "http://localhost:3000/auth/callback"
+dotnet user-secrets set "Google:Auth:RedirectUri" "http://localhost:8080"
+
+# Gemini API Key (MANDATORY for AI Agent Chat)
+dotnet user-secrets set "Gemini:ApiKey" "YOUR_GEMINI_API_KEY"
 
 # Verify
 dotnet user-secrets list
@@ -548,6 +556,9 @@ Both services feature interactive API documentation via Scalar (Development mode
 
 ![Lead Import Success](docs/images/api-documentation/leads-import-sogeti-success.png)
 *Successful import and enrichment of leads from Hunter.io in Features API.*
+
+![Hunter.io Contact Search](docs/images/api-documentation/features-hunter-frontend.png)
+*Hunter.io search by domain (e.g. stripe.com) under the Contacts/Leads view in the interface, retrieving and displaying found contacts.*
 </details>
 </details>
 
@@ -704,6 +715,21 @@ To guarantee high security in production, all credentials and API keys are compl
 - **Managed Identities & RBAC:** Access to Key Vault secrets is secured using Azure RBAC. The container apps are assigned a User-Assigned Managed Identity, which is granted the *Key Vault Secrets User* role. No passwords or client secrets are stored in the code.
 - **Local Fallback:** If the app cannot connect to Azure at startup (e.g., during offline local development), it falls back gracefully to local User Secrets.
 
+#### Required Production Secrets (Azure Key Vault)
+
+The following secrets must be added to your Azure Key Vault. Nested JSON configuration sections are separated using a double dash (`--`):
+
+| Configuration Key | Key Vault Secret Name | Purpose |
+|-------------------|-----------------------|---------|
+| `Gemini:ApiKey` | `Gemini--ApiKey` | API Key for Google Gemini AI integration (Core API) |
+| `Hunter:ApiKey` | `Hunter--ApiKey` | API Key for Hunter.io lead enrichment (Features API) |
+| `Google:Auth:ClientId` | `Google--Auth--ClientId` | Google OAuth2 Client ID (Core API) |
+| `Google:Auth:ClientSecret` | `Google--Auth--ClientSecret` | Google OAuth2 Client Secret (Core API) |
+| `Google:Auth:RedirectUri` | `Google--Auth--RedirectUri` | Redirect URI for Google SSO (Core API) |
+| `JwtSettings:SecretKey` | `JwtSettings--SecretKey` | Signature Key for JWT generation |
+| `JwtSettings:Issuer` | `JwtSettings--Issuer` | Token Issuer domain/identifier |
+| `JwtSettings:Audience` | `JwtSettings--Audience` | Token Audience identifier |
+
 <details>
 <summary><b>View Screenshot</b></summary>
 
@@ -837,7 +863,7 @@ We have automated the building, testing, and deployment of the entire fullstack 
 
 ---
 
-## Advanced Design & Resiliency Patterns
+## <a id="advanced-design-and-resiliency-patterns"></a>Advanced Design & Resiliency Patterns
 
 <details>
 <summary><b>Advanced Backend Features (Exception Handling, Polly Policies & Caching)</b></summary>
@@ -974,7 +1000,7 @@ builder.Services.AddHttpClient("GoogleAuth", client =>
 
 ---
 
-## Surgical Test Flow (End-to-End)
+## <a id="surgical-test-flow"></a>Surgical Test Flow (End-to-End)
 
 <details>
 <summary><b>Surgical Test Flow Phases</b></summary>
@@ -1051,7 +1077,7 @@ Follow these steps to verify the entire system's functionality (Security, Integr
 
 ---
 
-## Observability & Monitoring
+## <a id="observability-and-monitoring"></a>Observability & Monitoring
 
 <details>
 <summary><b>Observability & Monitoring Details</b></summary>
@@ -1067,15 +1093,22 @@ We have integrated full observability into the production environment:
 
 ---
 
-## AI-Driven Feature (Gemini AI Integration)
+## <a id="ai-driven-feature"></a>AI-Driven Feature (Gemini AI Integration)
 
 <details>
 <summary><b>AI-Driven Feature Details (Gemini AI)</b></summary>
 
 The Lianer application integrates a secure, backend-driven AI feature utilizing the Gemini AI API:
-- **Gemini Agent Integration:** A server-side AI agent helps users manage, retrieve, and automatically categorize tasks/leads.
+- **Gemini Agent Integration:** A server-side AI agent that helps users manage, create, update, and delete CRM contacts using natural language directly from a chat interface.
 - **Secure Key Management:** The API key for Gemini is stored securely in Azure Key Vault and injected on startup.
 - **UX Resiliency:** Includes fallback mechanisms to ensure a smooth user experience even if the external AI service rate-limits or fails.
+
+<details>
+<summary><b>View Chat & Security Sandbox Screenshot</b></summary>
+
+![Gemini AI Agent Chat & Security Prompt Test](docs/images/api-documentation/gemini-agent-chat.png)
+*AI chat interface demonstrating prompt injection protection (graceful fallback) and contact creation proposal.*
+</details>
 </details>
 
 ---
@@ -1098,7 +1131,7 @@ For questions or feedback, contact the team via GitHub Issues or create a Pull R
 
 ---
 
-## Technical Verification (Logs)
+## <a id="technical-verification"></a>Technical Verification (Logs)
 
 <details>
 <summary><b>System Logs & Verification</b></summary>

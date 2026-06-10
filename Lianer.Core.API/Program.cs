@@ -17,6 +17,7 @@ namespace Lianer.Core.API
             .SetupRepositories() 
             .SetupGoogleAuth()
             .SetupGeminiClient()
+            .SetupAuthCookies(builder.Configuration, builder.Environment)
             .SetupJwt(builder.Configuration, builder.Environment)
             .SetupCorsPolicy(builder.Configuration)
             .SetupRateLimiting()

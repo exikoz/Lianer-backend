@@ -11,7 +11,7 @@ public static class CorsExtensions
                 {
                     policy.WithOrigins(
                             config.GetSection("Cors:AllowedOrigins").Get<string[]>()
-                            ?? ["http://localhost:5173", "http://localhost:3000"])
+                            ?? ["http://localhost:5173", "http://localhost:3000", "http://localhost:8080"])
                         .AllowAnyHeader()
                         .AllowAnyMethod()
                         .AllowCredentials();
