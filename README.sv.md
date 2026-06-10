@@ -1,10 +1,10 @@
 # Lianer Backend 2.0 (Svenska)
 
-[English](README.md) | [Swedish](README.sv.md) | [Dokumentation](deployment.md) | [ADR](docs/adr/0001-choosing-azure-hosting.md) | [AI](README.sv.md#ai-driven-funktion-gemini-ai-integration) | [Frontend Live-demo](https://lianer-frontend.icybush-5ce7e353.italynorth.azurecontainerapps.io)
+[English](README.md) | [Swedish](README.sv.md) | [Dokumentation](deployment.md) | [ADR](docs/adr/0001-choosing-azure-hosting.md) | [AI](README.sv.md#ai-driven-funktion-gemini-ai-integration) | <a href="https://lianer-frontend.icybush-5ce7e353.italynorth.azurecontainerapps.io/" target="_blank" rel="noopener noreferrer">Frontend Live-demo</a>
 
 En säker och distribuerad ASP.NET Core 9-mikrotjänstarkitektur byggd för molndriftsättning. Innehåller JWT-autentisering, Google OAuth2-integration, extern API-kommunikation (Hunter.io & Gemini AI) och lösenordsfri Azure Key Vault-integration.
 
-**Live-applikation:** [Lianer Frontend App](https://lianer-frontend.icybush-5ce7e353.italynorth.azurecontainerapps.io)
+**Live-applikation:** <a href="https://lianer-frontend.icybush-5ce7e353.italynorth.azurecontainerapps.io/" target="_blank" rel="noopener noreferrer">Lianer Frontend App</a>
 
 ![Build & Test](https://github.com/exikoz/Lianer-backend/actions/workflows/pr.yml/badge.svg)
 ![Deploy to Azure](https://github.com/exikoz/Lianer-backend/actions/workflows/deploy.yml/badge.svg)
@@ -19,20 +19,25 @@ En säker och distribuerad ASP.NET Core 9-mikrotjänstarkitektur byggd för moln
 
 ## Innehållsförteckning
 
-- [Driftsättning och Systemstatus](#driftsättning-och-systemstatus)
+- [Driftsättning och Systemstatus](#driftsattning-och-systemstatus)
 - [Arkitektur](#arkitektur)
 - [Funktioner](#funktioner)
-- [Kom igång](#kom-igång)
+- [Kom igång](#kom-igang)
 - [API-dokumentation](#api-dokumentation)
-- [Säkerhet](#säkerhet)
+- [Säkerhet](#sakerhet)
 - [Testning](#testning)
 - [CI/CD-pipeline](#cicd-pipeline)
-- [Avancerade design- och stabilitetsmönster](#avancerade-design-och-stabilitetsmönster)
+- [Avancerade design- och stabilitetsmönster](#avancerade-design-och-stabilitetsmonster)
+- [Kirurgiskt Testflöde (End-to-End)](#kirurgiskt-testflode)
+- [Övervakning & Driftsstatus](#overvakning-och-driftsstatus)
+- [AI-Driven Funktion (Gemini AI-integration)](#ai-driven-funktion)
 - [Team](#team)
+- [Kontakt](#kontakt)
+- [Teknisk verifiering (Loggar)](#teknisk-verifiering)
 
 ---
 
-## Driftsättning och Systemstatus
+## <a id="driftsattning-och-systemstatus"></a>Driftsättning och Systemstatus
 
 Systemet är fullständigt containeriserat och driftsatt i en enhetlig miljö i molnet. Nedan följer en utförlig genomgång av hur systemets olika delar har byggts, säkrats, kvalitetssäkrats och satts i drift. Klicka på respektive sektion för att expandera och läsa mer:
 
@@ -151,6 +156,8 @@ I händelse av driftstörningar felsöker vi systemet enligt följande runbook-s
 ![KQL-fråga för beroendeanrop](docs/images/log-analytics-dependencies.png)
 *KQL-frågeresultat för misslyckade externa beroendeanrop.*
 </details>
+</details>
+
 ---
 
 ## Arkitektur
@@ -407,7 +414,7 @@ builder.Services.AddHttpClient<CoreApiClient>(client =>
 
 ---
 
-## Kom igång
+## <a id="kom-igang"></a>Kom igång
 
 <details>
 <summary><b>Inställningar, installation & körningsguide</b></summary>
@@ -446,6 +453,9 @@ dotnet user-secrets set "JwtSettings:ExpirationMinutes" "60"
 dotnet user-secrets set "Google:Auth:ClientId" "YOUR_CLIENT_ID.apps.googleusercontent.com"
 dotnet user-secrets set "Google:Auth:ClientSecret" "YOUR_CLIENT_SECRET"
 dotnet user-secrets set "Google:Auth:RedirectUri" "http://localhost:3000/auth/callback"
+
+# Gemini API-nyckel (OBLIGATORISKT för AI-Agent Chat)
+dotnet user-secrets set "Gemini:ApiKey" "YOUR_GEMINI_API_KEY"
 
 # Verifiera
 dotnet user-secrets list
@@ -550,12 +560,15 @@ Båda tjänsterna har interaktiv API-dokumentation via Scalar (endast i utveckli
 
 ![Import av Leads Lyckad](docs/images/api-documentation/leads-import-sogeti-success.png)
 *Import och berikning av leads från Hunter.io i Features API.*
+
+![Hunter.io Sökning Kontakter](docs/images/api-documentation/features-hunter-frontend.png)
+*Hunter.io-sökning på domän (t.ex. stripe.com) under Kontakter-vyn i gränssnittet, där hittade kontakter hämtas och visas.*
 </details>
 </details>
 
 ---
 
-## Säkerhet
+## <a id="sakerhet"></a>Säkerhet
 
 <details>
 <summary><b>Autentisering, SSO, CORS & Key Vault-detaljer</b></summary>
@@ -707,6 +720,21 @@ För att garantera hög säkerhet i produktionen är alla hemligheter och API-ny
 - **Managed Identities & RBAC:** Åtkomst till Key Vault-hemligheter säkras via Azure RBAC. Våra Container Apps har tilldelats en Managed Identity som har rollen *Key Vault Secrets User*. Inga lösenord eller klienthemligheter sparas i källkoden.
 - **Lokal fallback:** Om appen inte kan ansluta till Azure vid uppstart (t.ex. vid lokal offline-utveckling) faller den graciöst tillbaka på lokala User Secrets.
 
+#### Obligatoriska Hemligheter i Produktion (Azure Key Vault)
+
+Följande hemligheter måste läggas till i ditt Azure Key Vault. Nästlade JSON-konfigurationsnycklar separeras med dubbla bindestreck (`--`):
+
+| Konfigurationsnyckel | Namn på Key Vault-hemlighet | Syfte |
+|----------------------|-----------------------------|-------|
+| `Gemini:ApiKey` | `Gemini--ApiKey` | API-nyckel för Google Gemini AI-integration (Core API) |
+| `Hunter:ApiKey` | `Hunter--ApiKey` | API-nyckel för Hunter.io lead-berikning (Features API) |
+| `Google:Auth:ClientId` | `Google--Auth--ClientId` | Google OAuth2 Client ID (Core API) |
+| `Google:Auth:ClientSecret` | `Google--Auth--ClientSecret` | Google OAuth2 Client Secret (Core API) |
+| `Google:Auth:RedirectUri` | `Google--Auth--RedirectUri` | Redirect URI för Google SSO (Core API) |
+| `JwtSettings:SecretKey` | `JwtSettings--SecretKey` | Signaturnyckel för JWT-generering |
+| `JwtSettings:Issuer` | `JwtSettings--Issuer` | Tokenutgivare (Issuer) domän/identifierare |
+| `JwtSettings:Audience` | `JwtSettings--Audience` | Tokenmottagare (Audience) identifierare |
+
 <details>
 <summary><b>Visa skärmbild</b></summary>
 
@@ -842,7 +870,7 @@ Vi har automatiserat bygge, testning och driftsättning av hela fullstack-system
 
 ---
 
-## Avancerade design- och stabilitetsmönster
+## <a id="avancerade-design-och-stabilitetsmonster"></a>Avancerade design- och stabilitetsmönster
 
 <details>
 <summary><b>Avancerade backend-funktioner (Felhantering, Polly-policyer & Cachelagring)</b></summary>
@@ -980,7 +1008,7 @@ builder.Services.AddHttpClient("GoogleAuth", client =>
 
 ---
 
-## Kirurgiskt Testflöde (End-to-End)
+## <a id="kirurgiskt-testflode"></a>Kirurgiskt Testflöde (End-to-End)
 
 <details>
 <summary><b>Kirurgiska testfaser</b></summary>
@@ -1058,7 +1086,7 @@ Följ dessa steg för att verifiera hela systemets funktionalitet (säkerhet, in
 
 ---
 
-## Övervakning & Driftsstatus
+## <a id="overvakning-och-driftsstatus"></a>Övervakning & Driftsstatus
 
 <details>
 <summary><b>Övervaknings- & driftsdetaljer</b></summary>
@@ -1075,16 +1103,23 @@ Vi har integrerat komplett övervakning och loggning i produktionsmiljön:
 
 ---
 
-## AI-Driven Funktion (Gemini AI-integration)
+## <a id="ai-driven-funktion"></a>AI-Driven Funktion (Gemini AI-integration)
 
 <details>
 <summary><b>AI-driven funktion (Gemini AI)</b></summary>
 
 
 Lianer-applikationen integrerar en säker, backend-driven AI-funktion via Gemini AI API:
-- **Gemini Agent-integration:** En AI-agent på serversidan hjälper användare att hantera, hämta och automatiskt kategorisera uppgifter/leads.
+- **Gemini Agent-integration:** En AI-agent på serversidan som hjälper användare att hantera, skapa, uppdatera och radera CRM-kontakter via naturligt språk direkt i ett chattgränssnitt.
 - **Säker nyckelhantering:** API-nyckeln för Gemini lagras säkert i Azure Key Vault och injiceras vid applikationsstart.
 - **UX-stabilitet:** Innehåller fallback-mekanismer för att säkerställa en smidig användarupplevelse även om den externa AI-tjänsten är nere eller begränsar anropstakten.
+
+<details>
+<summary><b>Visa skärmbild av AI-chatt & säkerhetstest</b></summary>
+
+![Gemini AI-Agent Chatt & Säkerhetstest](docs/images/api-documentation/gemini-agent-chat.png)
+*Gränssnittet för AI-chatten som demonstrerar skydd mot system prompt-manipulering (graciös fallback) samt förslag på att skapa en kontakt.*
+</details>
 </details>
 
 ---
@@ -1107,7 +1142,7 @@ För frågor eller feedback, kontakta teamet via GitHub Issues eller skapa en Pu
 
 ---
 
-## Teknisk verifiering (Loggar)
+## <a id="teknisk-verifiering"></a>Teknisk verifiering (Loggar)
 
 <details>
 <summary><b>Systemloggar & verifiering</b></summary>
