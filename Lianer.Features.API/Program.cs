@@ -120,7 +120,8 @@ namespace Lianer.Features.API
             });
 
             builder.Services.AddScoped<IHunterService, HunterService>();
-
+            builder.Services.SetupAuthCookies(builder.Configuration, builder.Environment);
+            builder.Services.AddHttpContextAccessor();
             // --- Configure JWT Authentication ---
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
             var secretKey = jwtSettings["SecretKey"];

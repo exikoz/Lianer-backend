@@ -10,7 +10,8 @@ using Microsoft.Extensions.Caching.Memory;
 namespace Lianer.Core.API.Controllers;
 
 /// <summary>
-/// Controller for session management (login/logout)
+/// Controller for session management.
+/// Authentication is handled with HttpOnly cookies.
 /// </summary>
 [ApiController]
 [ApiVersion("1.0")]
@@ -20,11 +21,12 @@ public class SessionsController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly IGoogleAuthService _googleAuthService;
+    private readonly AuthCookieService _authCookieService;
     private readonly IMemoryCache _cache;
     private readonly ILogger<SessionsController> _logger;
-    private readonly AuthCookieService _authCookieService;
+
     public SessionsController(
-        IAuthService authService, 
+        IAuthService authService,
         IGoogleAuthService googleAuthService,
         AuthCookieService authCookieService,
         IMemoryCache cache,
@@ -37,81 +39,117 @@ public class SessionsController : ControllerBase
         _logger = logger;
     }
 
-
-
-    
     /// <summary>
-    /// Creates a new session (login) - Returns JWT token
+    /// Creates a new session.
     /// </summary>
-    /// <param name="request">Login credentials (email and password)</param>
-    /// <returns>JWT token and user information</returns>
-    /// <response code="200">Login successful, returns JWT token</response>
-    /// <response code="401">Invalid credentials</response>
-    /// <response code="400">Invalid input data</response>
-    
     [HttpPost]
-    [ProducesResponseType(typeof(LoginResponseDto), StatusCodes.Status200OK)]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<LoginResponseDto>> CreateSession([FromBody] LoginRequestDto request)
+    public async Task<IActionResult> CreateSession([FromBody] LoginRequestDto request)
     {
         _logger.LogInformation("POST /api/v1/sessions called");
 
         var response = await _authService.LoginAsync(request);
 
-        return Ok(response);
-    } 
+        _authCookieService.CreateAccessCookie(
+            Response,
+            response.AccessToken);
 
-    /// <summary>
-    /// Deletes a session (logout) - Future implementation
-    /// </summary>
-    /// <param name="id">Session ID</param>
-    [HttpDelete("{id}")]
+        _authCookieService.CreateCsrfCookie(Response);
+
+        return Ok(new
+        {
+            message = "Login successful.",
+            user = response.User
+        });
+    }
+
+
+    [HttpDelete]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult DeleteSession(Guid id)
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public IActionResult DeleteSession()
     {
-        // TODO: Implement in future ticket
-        _logger.LogInformation("DELETE /api/v1/sessions/{Id} called (not implemented)", id);
-        return StatusCode(501, new { message = "Logout functionality will be implemented later" });
+        _logger.LogInformation("DELETE /api/v1/sessions called");
+
+        _authCookieService.DeleteAuthenticationCookies(Response);
+
+        return NoContent();
     }
 
     /// <summary>
-    /// Creates a new session via Google SSO (auto-registration)
+    /// Returns the current authenticated user from the JWT inside the HttpOnly cookie.
     /// </summary>
-    /// <param name="request">Google OAuth2 access token</param>
-    /// <returns>JWT token and user information</returns>
-    /// <response code="200">Login successful, returns JWT token</response>
-    /// <response code="401">Invalid Google token</response>
-    /// <response code="400">Invalid input data</response>
-    /// <response code="503">Google authentication service unavailable</response>
+    [HttpGet("me")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public IActionResult Me()
+    {
+        var userId =
+            User.FindFirstValue("userId")
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        var email =
+            User.FindFirstValue("email")
+            ?? User.FindFirstValue(ClaimTypes.Email);
+
+        var fullName =
+            User.FindFirstValue("fullName")
+            ?? User.FindFirstValue(ClaimTypes.Name);
+
+        return Ok(new
+        {
+            user = new
+            {
+                userId,
+                email,
+                fullName
+            }
+        });
+    }
+
+    /// <summary>
+    /// Creates a new session via Google SSO.
+    /// </summary>
     [HttpPost("google")]
-    [ProducesResponseType(typeof(LoginResponseDto), StatusCodes.Status200OK)]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
-    public async Task<ActionResult<LoginResponseDto>> CreateGoogleSession([FromBody] GoogleLoginRequestDto request)
+    public async Task<IActionResult> CreateGoogleSession([FromBody] GoogleLoginRequestDto request)
     {
         _logger.LogInformation("POST /api/v1/sessions/google called");
 
         try
         {
-            // Validate Google access token and get user info
             var googleUser = await _googleAuthService.ValidateGoogleTokenAsync(request.AccessToken);
-            
+
             if (googleUser == null)
             {
                 _logger.LogWarning("Invalid Google access token provided");
                 return Unauthorized(new { message = "Invalid Google access token" });
             }
 
-            // Authenticate or auto-register user
             var response = await _authService.GoogleLoginAsync(googleUser);
 
-            // Invalidate users list cache as auto-registration might have occurred
+            _authCookieService.CreateAccessCookie(
+                Response,
+                response.AccessToken);
+
+            _authCookieService.CreateCsrfCookie(Response);
+
             _cache.Remove("users_list");
 
-            return Ok(response);
+            return Ok(new
+            {
+                message = "Google login successful.",
+                user = response.User
+            });
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("temporarily unavailable"))
         {
@@ -126,50 +164,24 @@ public class SessionsController : ControllerBase
     }
 
     /// <summary>
-    /// Gets the Google OAuth2 authorization URL to start the login flow
+    /// Gets the Google OAuth2 authorization URL to start the login flow.
     /// </summary>
-    /// <returns>A JSON object containing the authorization URL</returns>
-    /// <response code="200">Returns the Google authorization URL</response>
     [HttpGet("google/url")]
+    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult GetGoogleUrl()
     {
         _logger.LogInformation("GET /api/v1/sessions/google/url called");
+
         var url = _googleAuthService.GetGoogleLoginUrl();
+
         return Ok(new { url });
     }
 
-
-
-    /* 
-        This endpoint is fully working and can correctly validate users and
-        extract JWT-tokens from HttpOnly cookies. 
-        This should replace our Authentication in Production.
-    */
-    [HttpPost("cookielogin")]
-    [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreateSessionWithCookie([FromBody] LoginRequestDto request)
-    {
-        _logger.LogInformation("POST /api/v1/sessions/cookielogin called");
-
-        var response = await _authService.LoginAsync(request);
-
-        _authCookieService.CreateAccessCookie(
-            Response,
-            response.AccessToken);
-
-        _authCookieService.CreateCsrfCookie(Response);
-         
-        return Ok(new
-        {
-            message = "Login successful.",
-            user = response.User
-        });
-    }
-
+    /// <summary>
+    /// Temporary diagnostic endpoint for verifying that cookie auth works.
+    /// Can be removed later.
+    /// </summary>
     [HttpGet("cookie-test")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -182,10 +194,8 @@ public class SessionsController : ControllerBase
 
         return Ok(new
         {
-            message = "Cookie auth works. JWT was read from the access cookie.",
+            message = "Cookie auth works. User extracted from JWT cookie.",
             diagnostics
         });
     }
-
-
 }
