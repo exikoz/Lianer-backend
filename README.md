@@ -27,13 +27,13 @@ A secure and distributed ASP.NET Core 9 microservices architecture built for clo
 - [Security](#security)
 - [Testing](#testing)
 - [CI/CD Pipeline](#cicd-pipeline)
-- [Advanced Design & Resiliency Patterns](#advanced-design--resiliency-patterns)
-- [Surgical Test Flow (End-to-End)](#surgical-test-flow-end-to-end)
-- [Observability & Monitoring](#observability--monitoring)
-- [AI-Driven Feature (Gemini AI Integration)](#ai-driven-feature-gemini-ai-integration)
+- [Advanced Design & Resiliency Patterns](#advanced-design-and-resiliency-patterns)
+- [Surgical Test Flow (End-to-End)](#surgical-test-flow)
+- [Observability & Monitoring](#observability-and-monitoring)
+- [AI-Driven Feature (Gemini AI Integration)](#ai-driven-feature)
 - [Team](#team)
 - [Contact](#contact)
-- [Technical Verification (Logs)](#technical-verification-logs)
+- [Technical Verification (Logs)](#technical-verification)
 
 ---
 
@@ -863,7 +863,7 @@ We have automated the building, testing, and deployment of the entire fullstack 
 
 ---
 
-## Advanced Design & Resiliency Patterns
+## <a id="advanced-design-and-resiliency-patterns"></a>Advanced Design & Resiliency Patterns
 
 <details>
 <summary><b>Advanced Backend Features (Exception Handling, Polly Policies & Caching)</b></summary>
@@ -1000,7 +1000,7 @@ builder.Services.AddHttpClient("GoogleAuth", client =>
 
 ---
 
-## Surgical Test Flow (End-to-End)
+## <a id="surgical-test-flow"></a>Surgical Test Flow (End-to-End)
 
 <details>
 <summary><b>Surgical Test Flow Phases</b></summary>
@@ -1077,7 +1077,7 @@ Follow these steps to verify the entire system's functionality (Security, Integr
 
 ---
 
-## Observability & Monitoring
+## <a id="observability-and-monitoring"></a>Observability & Monitoring
 
 <details>
 <summary><b>Observability & Monitoring Details</b></summary>
@@ -1093,7 +1093,7 @@ We have integrated full observability into the production environment:
 
 ---
 
-## AI-Driven Feature (Gemini AI Integration)
+## <a id="ai-driven-feature"></a>AI-Driven Feature (Gemini AI Integration)
 
 <details>
 <summary><b>AI-Driven Feature Details (Gemini AI)</b></summary>
@@ -1131,7 +1131,7 @@ For questions or feedback, contact the team via GitHub Issues or create a Pull R
 
 ---
 
-## Technical Verification (Logs)
+## <a id="technical-verification"></a>Technical Verification (Logs)
 
 <details>
 <summary><b>System Logs & Verification</b></summary>

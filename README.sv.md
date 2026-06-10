@@ -19,25 +19,25 @@ En säker och distribuerad ASP.NET Core 9-mikrotjänstarkitektur byggd för moln
 
 ## Innehållsförteckning
 
-- [Driftsättning och Systemstatus](#driftsättning-och-systemstatus)
+- [Driftsättning och Systemstatus](#driftsattning-och-systemstatus)
 - [Arkitektur](#arkitektur)
 - [Funktioner](#funktioner)
-- [Kom igång](#kom-igång)
+- [Kom igång](#kom-igang)
 - [API-dokumentation](#api-dokumentation)
-- [Säkerhet](#säkerhet)
+- [Säkerhet](#sakerhet)
 - [Testning](#testning)
 - [CI/CD-pipeline](#cicd-pipeline)
-- [Avancerade design- och stabilitetsmönster](#avancerade-design-och-stabilitetsmönster)
-- [Kirurgiskt Testflöde (End-to-End)](#kirurgiskt-testflöde-end-to-end)
-- [Övervakning & Driftsstatus](#övervakning--driftsstatus)
-- [AI-Driven Funktion (Gemini AI-integration)](#ai-driven-funktion-gemini-ai-integration)
+- [Avancerade design- och stabilitetsmönster](#avancerade-design-och-stabilitetsmonster)
+- [Kirurgiskt Testflöde (End-to-End)](#kirurgiskt-testflode)
+- [Övervakning & Driftsstatus](#overvakning-och-driftsstatus)
+- [AI-Driven Funktion (Gemini AI-integration)](#ai-driven-funktion)
 - [Team](#team)
 - [Kontakt](#kontakt)
-- [Teknisk verifiering (Loggar)](#teknisk-verifiering-loggar)
+- [Teknisk verifiering (Loggar)](#teknisk-verifiering)
 
 ---
 
-## Driftsättning och Systemstatus
+## <a id="driftsattning-och-systemstatus"></a>Driftsättning och Systemstatus
 
 Systemet är fullständigt containeriserat och driftsatt i en enhetlig miljö i molnet. Nedan följer en utförlig genomgång av hur systemets olika delar har byggts, säkrats, kvalitetssäkrats och satts i drift. Klicka på respektive sektion för att expandera och läsa mer:
 
@@ -414,7 +414,7 @@ builder.Services.AddHttpClient<CoreApiClient>(client =>
 
 ---
 
-## Kom igång
+## <a id="kom-igang"></a>Kom igång
 
 <details>
 <summary><b>Inställningar, installation & körningsguide</b></summary>
@@ -568,7 +568,7 @@ Båda tjänsterna har interaktiv API-dokumentation via Scalar (endast i utveckli
 
 ---
 
-## Säkerhet
+## <a id="sakerhet"></a>Säkerhet
 
 <details>
 <summary><b>Autentisering, SSO, CORS & Key Vault-detaljer</b></summary>
@@ -870,7 +870,7 @@ Vi har automatiserat bygge, testning och driftsättning av hela fullstack-system
 
 ---
 
-## Avancerade design- och stabilitetsmönster
+## <a id="avancerade-design-och-stabilitetsmonster"></a>Avancerade design- och stabilitetsmönster
 
 <details>
 <summary><b>Avancerade backend-funktioner (Felhantering, Polly-policyer & Cachelagring)</b></summary>
@@ -1008,7 +1008,7 @@ builder.Services.AddHttpClient("GoogleAuth", client =>
 
 ---
 
-## Kirurgiskt Testflöde (End-to-End)
+## <a id="kirurgiskt-testflode"></a>Kirurgiskt Testflöde (End-to-End)
 
 <details>
 <summary><b>Kirurgiska testfaser</b></summary>
@@ -1086,7 +1086,7 @@ Följ dessa steg för att verifiera hela systemets funktionalitet (säkerhet, in
 
 ---
 
-## Övervakning & Driftsstatus
+## <a id="overvakning-och-driftsstatus"></a>Övervakning & Driftsstatus
 
 <details>
 <summary><b>Övervaknings- & driftsdetaljer</b></summary>
@@ -1103,7 +1103,7 @@ Vi har integrerat komplett övervakning och loggning i produktionsmiljön:
 
 ---
 
-## AI-Driven Funktion (Gemini AI-integration)
+## <a id="ai-driven-funktion"></a>AI-Driven Funktion (Gemini AI-integration)
 
 <details>
 <summary><b>AI-driven funktion (Gemini AI)</b></summary>
@@ -1142,7 +1142,7 @@ För frågor eller feedback, kontakta teamet via GitHub Issues eller skapa en Pu
 
 ---
 
-## Teknisk verifiering (Loggar)
+## <a id="teknisk-verifiering"></a>Teknisk verifiering (Loggar)
 
 <details>
 <summary><b>Systemloggar & verifiering</b></summary>
