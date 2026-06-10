@@ -146,14 +146,14 @@ public class SessionsController : ControllerBase
         extract JWT-tokens from HttpOnly cookies. 
         This should replace our Authentication in Production.
     */
-    [HttpPost]
+    [HttpPost("cookielogin")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateSessionWithCookie([FromBody] LoginRequestDto request)
     {
-        _logger.LogInformation("POST /api/v1/sessions called");
+        _logger.LogInformation("POST /api/v1/sessions/cookielogin called");
 
         var response = await _authService.LoginAsync(request);
 
