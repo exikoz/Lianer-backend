@@ -62,7 +62,6 @@ public sealed class AuthCookieService : IAuthCookieService
         return new CookieOptions
         {
             // This flag ensures no JS running in the web browser can read the cookie.
-            // The browser hides it from document.cookie.
             HttpOnly = true,
 
             Secure = _settings.Secure,
@@ -73,6 +72,11 @@ public sealed class AuthCookieService : IAuthCookieService
         };
     }
 
+    /*
+        Used to refresh our AccessTokens so the
+        user doesn't have to login/out to generate one.
+        Only works while the user has a valid refresh token.
+    */
     public void CreateRefreshCookie(HttpResponse response, string refreshToken)
     {
         response.Cookies.Append
@@ -99,9 +103,19 @@ public sealed class AuthCookieService : IAuthCookieService
         };
     }
 
+    /*
+        This cookie gives the api an  extra layer of protection. 
+        It protects against Cross-site Request Forgery attacks. 
+        So if some site tries to trick the browser into sending
+        a request with our auth cookies, the api will still reject it
+        unless the request also sends the correct CSRF token in the header.
 
+
+    */
     public void CreateCsrfCookie(HttpResponse response)
     {
+        /* to make it hard to guess we encode 256-bits of data into a string
+        */
         var csrfToken = GenerateSecureToken();
 
         response.Cookies.Append
@@ -112,15 +126,12 @@ public sealed class AuthCookieService : IAuthCookieService
         );
     }
 
+    
     private CookieOptions GetCsrfCookieOptions()
     {
         return new CookieOptions
         {
-            // Important:
-            // CSRF token must be readable by frontend JavaScript.
-            // Therefore this one is intentionally NOT HttpOnly.
             HttpOnly = false,
-
             Secure = _settings.Secure,
             SameSite = _settings.SameSite,
             Path = _settings.Path,
@@ -128,7 +139,9 @@ public sealed class AuthCookieService : IAuthCookieService
             IsEssential = _settings.IsEssential
         };
     }
-
+    /*
+        Here we extract the content of the cookie, in this case the jwt token. 
+    */
     public string? ReadAccessTokenCookie(HttpRequest request)
     {
         return request.Cookies.TryGetValue(_settings.AccessCookieName, out var token)
@@ -142,6 +155,7 @@ public sealed class AuthCookieService : IAuthCookieService
             ? token
             : null;
     }
+
 
     public bool HasAuthCookie(HttpRequest request)
     {
@@ -211,11 +225,25 @@ public sealed class AuthCookieService : IAuthCookieService
         return Convert.ToBase64String(bytes);
     }
 
+    /*
+        User for our CSRF cookie validation
+        Ensured the random bits frontend sends back are still
+        the same as the one backend kept.
+    */
     private static bool FixedTimeEquals(string left, string right)
     {
         var leftBytes = Encoding.UTF8.GetBytes(left);
         var rightBytes = Encoding.UTF8.GetBytes(right);
 
+        /*
+           String comparison methods stops executing when
+           a difference is found for logical reasons. 
+           This also means that someone could theoretically 
+           figure out how much of a token was correct by measuring
+           the time differences. FixedTimeEquals is a better
+           use than normal string comparisons for this usecase. As it 
+           keeps comparing indescriminatly. 
+        */
         return leftBytes.Length == rightBytes.Length
             && CryptographicOperations.FixedTimeEquals(leftBytes, rightBytes);
     }
